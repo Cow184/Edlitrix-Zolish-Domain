@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fenton Drama System PRO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+    /* 1. VARIABLES & BASICS */
+    :root { --primary-color: #8B0000; --secondary-color: #FFD700; --bg-color: #f8fafc; --text-color: #334155; --sidebar-width: 250px; }
+    
+    body { font-family: 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; display: flex; height: 100vh; overflow: hidden; position: relative; transition: background 0.3s; }
+    body.ezd-dark-mode { --bg-color: #0f172a; --text-color: #e2e8f0; }
+
+    /* GLOBAL CHAOS BACKGROUND */
+    #globalChaosCanvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1 !important; pointer-events: none; opacity: 0.15; }
+
+    /* ----------------------------------------------------------- */
+    /* DESKTOP DEFAULT STYLES (Pinned Sidebar)                   */
+    /* ----------------------------------------------------------- */
+
+    /* 1. SIDEBAR (Pinned) */
+    .sidebar { 
+        width: var(--sidebar-width); 
+        background: #1e293b; color: white; 
+        display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; 
+        flex-shrink: 0; 
+        z-index: 100 !important; 
+        position: relative; /* Pinned in place */
+        transform: none;    /* Always visible */
+        transition: none;   /* No slide animation on desktop resize */
+        box-shadow: 5px 0 25px rgba(0,0,0,0.1);
+    }
+    
+    /* Close button inside sidebar (Hidden on Desktop) */
+    .sidebar-close-btn { display: none; }
+
+    /* 2. MAIN CONTENT (Sits next to sidebar) */
+    .main-content { 
+        flex: 1; 
+        padding: 30px; 
+        overflow-y: auto; 
+        position: relative; 
+        z-index: 50 !important; 
+    }
+
+    /* 3. MOBILE TOGGLE BUTTON (Hidden on Desktop) */
+    #mobileMenuBtn { display: none; }
+    
+    /* 4. OVERLAY (Hidden on Desktop) */
+    #sidebarOverlay { display: none !important; }
+
+    /* ----------------------------------------------------------- */
+    /* MOBILE OVERRIDES (Floating Drawer)                        */
+    /* ----------------------------------------------------------- */
+    @media (max-width: 768px) {
+        
+        /* 1. SHOW THE BUTTON */
+        #mobileMenuBtn {
+            display: flex;
+            position: fixed; top: 15px; left: 15px; 
+            z-index: 200; 
+            background: var(--primary-color); color: white; width: 40px; height: 40px;
+            border-radius: 8px; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; transition: 0.2s;
+        }
+        #mobileMenuBtn:active { transform: scale(0.95); }
+
+        /* 2. SIDEBAR (Becomes Hidden Drawer) */
+        .sidebar {
+            position: fixed; top: 0; left: 0; height: 100%;
+            transform: translateX(-100%); /* Hide off-screen */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 300 !important; /* On top of everything */
+            box-shadow: 5px 0 25px rgba(0,0,0,0.5);
+        }
+        .sidebar.open { transform: translateX(0); } /* Slide in */
+        
+        /* Show close button on mobile */
+        .sidebar-close-btn { display: block; cursor: pointer; opacity: 0.7; padding: 5px; }
+
+        /* 3. MAIN CONTENT (Full Width + Button Spacing) */
+        .main-content {
+            width: 100%;
+            padding: 15px;
+            padding-top: 70px; /* Space for the button */
+        }
+
+        /* 4. OVERLAY */
+        #sidebarOverlay {
+            display: block !important; 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            z-index: 250; 
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        #sidebarOverlay.visible { opacity: 1; pointer-events: auto; }
+        
+        /* 5. POPOVER FIX */
+        #settingsPopover { left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%) scale(0.9); width: 85%; position: fixed; }
+    }
+
+    /* --- SHARED STYLES (Keep these) --- */
+    .sidebar-header { font-size: 20px; font-weight: 700; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; color: var(--secondary-color); }
+    .sidebar-footer { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
+    
+    .nav-item { 
+        padding: 12px 15px; border-radius: 8px; cursor: pointer; 
+        display: flex; align-items: center; gap: 12px; margin-bottom: 5px; 
+        transition: 0.2s; color: #cbd5e1; text-decoration: none; 
+        opacity: 0; transform: translateX(-10px); 
+        animation: slideInItem 0.4s ease-out forwards;
+    }
+    .nav-item:hover { background: rgba(255, 255, 255, 0.1); color: white; transform: translateX(5px); }
+    .nav-item.active { background: var(--primary-color) !important; color: white !important; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+    /* Stagger Delays */
+    .nav-item:nth-child(1) { animation-delay: 0.05s; }
+    .nav-item:nth-child(2) { animation-delay: 0.1s; }
+    .nav-item:nth-child(3) { animation-delay: 0.15s; }
+    .nav-item:nth-child(4) { animation-delay: 0.2s; }
+    .nav-item:nth-child(5) { animation-delay: 0.25s; }
+    .nav-item:nth-child(6) { animation-delay: 0.3s; }
+    .nav-item:nth-child(7) { animation-delay: 0.35s; }
+    .nav-item:nth-child(8) { animation-delay: 0.4s; }
+    .nav-item:nth-child(9) { animation-delay: 0.45s; }
+    .nav-item:nth-child(10) { animation-delay: 0.5s; }
+    .nav-item:nth-child(11) { animation-delay: 0.55s; }
+    .nav-item:nth-child(12) { animation-delay: 0.6s; }
+    .nav-item:nth-child(13) { animation-delay: 0.65s; }
+
+    @keyframes slideInItem { to { opacity: 1; transform: translateX(0); } }
+
+    /* User Profile */
+    .user-profile { margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+    .user-profile:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+    .user-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+    .user-email { font-size: 13px; color: white; word-break: break-all; margin-top: 2px; }
+
+    /* Settings Popover */
+    #settingsPopover {
+        position: absolute; bottom: 20px; left: 260px; width: 300px;
+        background: #ffffff; border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2); border: 1px solid #e2e8f0;
+        padding: 20px; display: none; flex-direction: column; gap: 18px;
+        z-index: 100; animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #settingsPopover.visible { display: flex; }
+    @keyframes popIn { from { opacity: 0; transform: translateX(-10px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+    
+    .pop-header { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+    .pop-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #475569; font-weight: 500; }
+    
+    .toggle-switch { position: relative; width: 44px; height: 24px; background: #e2e8f0; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+    .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.3s; }
+    .toggle-switch.active { background: var(--primary-color); }
+    .toggle-switch.active::after { transform: translateX(20px); }
+
+    .color-row { display: flex; gap: 8px; margin-top: 5px; }
+    .color-dot { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: 0.2s; }
+    .color-dot:hover { transform: scale(1.1); }
+    .color-dot.active { border-color: #334155; transform: scale(1.1); }
+    
+    .pop-select { padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; width: 140px; }
+
+    .module-container { max-width: none !important; width: 100%; margin: 0; padding: 0; animation: fadeIn 0.3s ease-out; }
+    .loader-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(248,250,252,0.8); display: none; justify-content: center; align-items: center; z-index: 50; }
+    .loader-spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; }
+    #app-root { min-height: 200px; width: 100%; display: block !important; opacity: 1 !important; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* DARK MODE OVERRIDES */
+    body.ezd-dark-mode #settingsPopover { background: #1e293b; border-color: #334155; }
+    body.ezd-dark-mode .pop-header { color: #f1f5f9; border-bottom-color: #334155; }
+    body.ezd-dark-mode .pop-row { color: #cbd5e1; }
+    body.ezd-dark-mode .pop-select { background: #0f172a; color: white; border-color: #334155; }
+    body.ezd-dark-mode .toggle-switch { background: #475569; }
+    body.ezd-dark-mode .toggle-switch.active { background: var(--primary-color); }
+    body.ezd-dark-mode .color-dot.active { border-color: #fff; }
+</style>
+    <?!= include('Store_Engine'); ?> <?!= library ?> 
+    <?!= include('Form_Library'); ?> 
+    <?!= include('ChaosEngine'); ?>
+
+</head>
+</head>
+<body>
+    <div id="mobileMenuBtn" onclick="GlobalApp.toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </div>
+
+    <div id="sidebarOverlay" onclick="GlobalApp.toggleSidebar()"></div>
+
+    <canvas id="globalChaosCanvas"></canvas>
+
+    <div id="settingsPopover">
+        <div class="pop-header"><i class="fas fa-sliders-h"></i> Preferences</div>
+        <div class="pop-row">
+            <span>Dark Mode</span>
+            <div id="toggleTheme" class="toggle-switch" onclick="GlobalApp.togglePref('theme')"></div>
+        </div>
+        <div class="pop-row">
+            <span>Metric Units</span>
+            <div id="toggleUnits" class="toggle-switch" onclick="GlobalApp.togglePref('units')"></div>
+        </div>
+        <div class="pop-row">
+            <span>Background</span>
+            <select class="pop-select" id="prefBg" onchange="GlobalApp.updateBg(this.value)">
+                <option value="lorenz">Lorenz (Butterfly)</option>
+                <option value="thomas">Thomas (Cloud)</option>
+                <option value="aizawa">Aizawa (Sphere)</option>
+                <option value="halvorsen">Halvorsen (Knot)</option>
+                <option value="dadras">Dadras (Twist)</option>
+                <option value="clean">Clean (Solid)</option>
+            </select>
+        </div>
+        <div style="font-size: 13px; color: #475569; font-weight: 500;">Accent Color</div>
+        <div class="color-row" id="colorPickerRow">
+            <div class="color-dot" style="background:#8B0000;" onclick="GlobalApp.setAccent('#8B0000', this)"></div>
+            <div class="color-dot" style="background:#2563eb;" onclick="GlobalApp.setAccent('#2563eb', this)"></div>
+            <div class="color-dot" style="background:#059669;" onclick="GlobalApp.setAccent('#059669', this)"></div>
+            <div class="color-dot" style="background:#7c3aed;" onclick="GlobalApp.setAccent('#7c3aed', this)"></div>
+            <div class="color-dot" style="background:#d97706;" onclick="GlobalApp.setAccent('#d97706', this)"></div>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="sidebar-header" style="justify-content: space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class="fas fa-masks-theater"></i> <span id="orgNameDisplay">FDS PRO</span>
+            </div>
+            <div class="sidebar-close-btn" onclick="GlobalApp.toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+
+        <div id="sidebar-nav">
+            <div class="nav-item" onclick="loadModule('dashboard')" style="opacity:0.5; pointer-events:all;">
+                <i class="fas fa-spinner fa-spin"></i> <span>Initializing...</span>
+            </div>
+        </div>
+        
+        <div class="sidebar-footer">
+            <div class="user-profile" onclick="GlobalApp.toggleSettings()">
+                <div class="user-label">Logged in as <i class="fas fa-cog" style="float:right;"></i></div>
+                <div class="user-email"><?= user.email ?></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="loader-overlay" id="mainLoader"><div class="loader-spinner"></div></div>
+        <div id="app-root" class="module-container"></div>
+    </div>
+
+<script>
+    window.EZD_STORE = { isReady: false };
+    window.FDS_CACHE = { settings: {}, people: [], isLoaded: false };
+    window.FDS_DATA_READY = false;
+    window.PENDING_MODULE = null;
+    window.IS_SAVING = false;
+
+    // --- GLOBAL APP LOGIC ---
+    window.GlobalApp = {
+        toggleSidebar: function() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if(sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('visible');
+            }
+        },
+        prefs: { theme: 'light', bg: 'lorenz', units: 'imperial', color: '#8B0000' },
+
+        init: function() {
+            try {
+                const saved = localStorage.getItem('fds_prefs');
+                if (saved) this.prefs = JSON.parse(saved);
+            } catch(e) {}
+            
+            // Init Chaos from external file
+            if (window.ChaosEngine) ChaosEngine.init();
+            
+            // Apply Prefs
+            this.applyAll();
+        },
+
+        toggleSettings: function() {
+            document.getElementById('settingsPopover').classList.toggle('visible');
+        },
+
+        togglePref: function(key) {
+            if (key === 'theme') this.prefs.theme = (this.prefs.theme === 'dark' ? 'light' : 'dark');
+            if (key === 'units') this.prefs.units = (this.prefs.units === 'metric' ? 'imperial' : 'metric');
+            this.saveAndApply();
+        },
+
+        updateBg: function(val) {
+            this.prefs.bg = val;
+            this.saveAndApply();
+        },
+
+        setAccent: function(hex, el) {
+            this.prefs.color = hex;
+            this.saveAndApply();
+        },
+
+        saveAndApply: function() {
+            localStorage.setItem('fds_prefs', JSON.stringify(this.prefs));
+            this.applyAll();
+        },
+
+        applyAll: function() {
+            // Theme
+            const themeBtn = document.getElementById('toggleTheme');
+            if (this.prefs.theme === 'dark') {
+                document.body.classList.add('ezd-dark-mode');
+                if(themeBtn) themeBtn.classList.add('active');
+            } else {
+                document.body.classList.remove('ezd-dark-mode');
+                if(themeBtn) themeBtn.classList.remove('active');
+            }
+
+            // Units
+            const unitBtn = document.getElementById('toggleUnits');
+            if(unitBtn) {
+                if(this.prefs.units === 'metric') unitBtn.classList.add('active');
+                else unitBtn.classList.remove('active');
+            }
+
+            // Background Select
+            const bgSelect = document.getElementById('prefBg');
+            if(bgSelect) bgSelect.value = this.prefs.bg;
+
+            // Accent Color
+            document.documentElement.style.setProperty('--primary-color', this.prefs.color);
+            document.querySelectorAll('.color-dot').forEach(d => {
+                if(d.getAttribute('style').includes(this.prefs.color)) d.classList.add('active');
+                else d.classList.remove('active');
+            });
+
+            // Update Chaos
+            if (window.ChaosEngine) {
+                ChaosEngine.configure(this.prefs);
+            }
+        }
+    };
+
+    function loadModule(moduleName) {
+        if (window.IS_SAVING) return;
+        if (!window.FDS_DATA_READY) { window.PENDING_MODULE = moduleName; return; }
+        
+        const root = document.getElementById('app-root');
+        const loader = document.getElementById('mainLoader');
+        if (loader) loader.style.display = 'flex';
+    
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const activeNav = document.getElementById('nav-' + moduleName);
+        if (activeNav) activeNav.classList.add('active');
+
+        google.script.run.withSuccessHandler(function(html) {
+            root.innerHTML = html;
+            
+            // --- THE FIX: Use .textContent instead of .innerText ---
+            const scripts = root.querySelectorAll("script");
+            scripts.forEach(oldScript => {
+                const newScript = document.createElement("script");
+                newScript.textContent = oldScript.textContent; // <--- This safely copies the raw code
+                document.body.appendChild(newScript);
+            });
+
+            if (window.EZD_UI) EZD_UI.init(root);
+            if (loader) loader.style.display = 'none';
+            
+        }).loadModuleContent(moduleName);
+    }
+
+    function hydrateStore(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (data.status === 'success') {
+                window.EZD_STORE.people = data.userdatabase || [];
+                window.EZD_STORE.settings = data.settings || {};
+                window.EZD_STORE.events = data.events || [];
+                window.EZD_STORE.isReady = true;
+                window.dispatchEvent(new CustomEvent('fdsDataReady'));
+            }
+        } catch (e) { console.error("Hydration Error", e); }
+    }
+
+    function preloadSystemData() {
+        google.script.run.withSuccessHandler(function(rawString) {
+            hydrateStore(rawString);
+            window.FDS_DATA_READY = true;
+            renderSidebarMenu(true); 
+            loadModule('dashboard'); 
+        }).getInitialSystemState(); // <--- This is your Master Sync!
+    }
+
+    function renderSidebarMenu(isReady) {
+        const nav = document.getElementById('sidebar-nav');
+        if (!nav) { console.error("Critical: sidebar-nav element missing"); return; }
+
+        const modules = [
+            { id: 'dashboard', label: 'Dashboard', icon: 'fa-th-large' },
+            { id: 'attendance', label: 'Attendance', icon: 'fa-check-square' },
+            { id: 'people', label: 'User Directory', icon: 'fa-users' },
+            { id: 'events', label: 'Events & Notes', icon: 'fa-calendar-alt' },
+            { id: 'script', label: 'Script Skeleton', icon: 'fa-scroll' },
+            { id: 'shows', label: 'Production Shows', icon: 'fa-masks-theater' },
+            { id: 'reports', label: 'Reports', icon: 'fa-chart-pie' },
+            { id: 'statistics', label: 'Statistics', icon: 'fa-chart-line' },
+            { id: 'admin', label: 'System Settings', icon: 'fa-cog' },
+            { id: 'ui-library', label: 'UI Viewer', icon: 'fa-swatchbook' }
+        ];
+
+        nav.innerHTML = `<div style="font-size:10px; color:#64748b; margin-bottom:5px; padding-left:15px; font-weight:600; letter-spacing:0.5px;">MAIN MENU</div>` + 
+            modules.map(m => `
+                <div class="nav-item" id="nav-${m.id}" onclick="loadModule('${m.id}'); if(window.innerWidth <= 768) GlobalApp.toggleSidebar();">
+                    <i class="fas ${m.icon}" style="width:20px; text-align:center;"></i> 
+                    <span>${m.label}</span>
+                </div>
+            `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.GlobalApp) GlobalApp.init(); 
+        preloadSystemData();
+    });
+</script>
+</body>
+</html>
