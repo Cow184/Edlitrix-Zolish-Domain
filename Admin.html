@@ -1,0 +1,245 @@
+<div class="admin-wrapper" id="admin-module-root">
+    <div class="admin-sidebar">
+        <div class="sidebar-header">
+            <h3>System Admin</h3>
+            <div id="btnSaveAdmin" 
+                 data-ezd-type="save-button" 
+                 data-label="Save Changes" 
+                 onclick="handleSaveClick()">
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-item active" onclick="switchAdminTab('general')" id="tabBtn_general">
+                <i class="fas fa-sliders-h"></i> General
+            </div>
+            <div class="menu-item" onclick="switchAdminTab('lists')" id="tabBtn_lists">
+                <i class="fas fa-list"></i> Lists & Dropdowns
+            </div>
+            <div class="menu-item" onclick="switchAdminTab('permissions')" id="tabBtn_permissions">
+                <i class="fas fa-lock"></i> Permissions & UI
+            </div>
+            <div class="menu-item danger-zone" onclick="switchAdminTab('danger')" id="tabBtn_danger">
+                <i class="fas fa-exclamation-triangle"></i> Danger Zone
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-content" id="admin-form">
+        
+        <div id="tab-general" class="admin-pane active">
+            <div class="pane-header"><h2>General Configuration</h2></div>
+            <div class="card">
+                <div id="production_title" data-ezd-type="input" data-label="Production Title"></div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    <div id="org_name" data-ezd-type="input" data-label="Organization Name"></div>
+                    <div id="academic_year" data-ezd-type="input" data-label="Academic Year"></div>
+                </div>
+                <div id="dropdown_org_type" data-ezd-type="select" data-label="Org Type" 
+                     data-ezd-options='["Middle School", "High School", "University"]'></div>
+            </div>
+        </div>
+
+        <div id="tab-lists" class="admin-pane">
+            <div class="pane-header"><h2>Custom Lists</h2></div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+                <div class="card" style="margin:0;">
+                    <label class="ezd-label">System Roles</label>
+                    <div id="adminRoles" data-ezd-type="list" data-columns="Role Name" data-list-name="roles"></div>
+                </div>
+                <div class="card" style="margin:0;">
+                    <label class="ezd-label">Member Groups</label>
+                    <div id="adminGroups" data-ezd-type="list" data-columns="Group Name" data-list-name="groups"></div>
+                </div>
+            </div>
+            <div class="card">
+                <label class="ezd-label">Production Characters</label>
+                <div id="adminCharacters" data-ezd-type="list" data-columns="Character Name,Abbreviation" data-list-name="characters"></div>
+            </div>
+            <div class="card">
+                <label class="ezd-label">Event Locations</label>
+                <div id="adminLocations" data-ezd-type="list" data-columns="Name,Grace Period,GPS,Tolerance" data-list-name="locations"></div>
+            </div>
+        </div>
+
+        <div id="tab-permissions" class="admin-pane">
+            <div class="pane-header"><h2>Permissions</h2></div>
+            <div class="card">
+                <div id="default_landing_module" data-ezd-type="select" data-label="Default Module" data-ezd-options='["Dashboard","People","Attendance","Events"]'></div>
+            </div>
+        </div>
+
+        <div id="tab-danger" class="admin-pane">
+            <div class="pane-header"><h2 style="color:#ef4444;">Danger Zone</h2></div>
+            <div class="card" style="border-color:#fecaca; background:#fff1f2;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><strong>System Reset</strong><p style="font-size:11px;">Wipes settings and returns to Setup Wizard.</p></div>
+                    <button class="ezd-btn" style="background:#ef4444;" onclick="confirmSystemReset()">Launch Setup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-wrapper { display: flex; height: calc(100vh - 60px); background: #f8fafc; margin: -30px; overflow: hidden; }
+    .admin-sidebar { width: 240px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 15px; }
+    .sidebar-header h3 { margin: 0; color: var(--ezd-primary); font-size: 18px; }
+    .sidebar-menu { padding: 10px 0; flex: 1; }
+    .menu-item { padding: 12px 20px; cursor: pointer; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: 0.2s; border-left: 3px solid transparent; }
+    .menu-item:hover { background: var(--ezd-primary-light); color: var(--ezd-primary); }
+    .menu-item.active { background: var(--ezd-primary-light); color: var(--ezd-primary); border-left-color: var(--ezd-primary); font-weight: 600; }
+    .menu-item.danger-zone { color: #ef4444; border-top: 1px solid #fee2e2; margin-top: 10px; }
+    .admin-content { flex: 1; padding: 30px; overflow-y: auto; box-sizing: border-box; }
+    .admin-pane { display: none; max-width: 900px; margin: 0 auto; }
+    .admin-pane.active { display: block; animation: ezd-fade 0.3s; }
+    .card { padding: 30px; overflow: visible !important; margin-bottom: 25px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; }
+    @keyframes ezd-fade { from { opacity: 0; } to { opacity: 1; } }
+</style>
+
+<script>
+window.AdminModule = {
+    init: function() {
+        if (window.EZD_STORE && window.EZD_STORE.isReady) {
+            this.populate();
+        } else {
+            window.addEventListener('fdsDataReady', () => this.populate());
+        }
+    },
+
+    populate: function() {
+        const settings = window.EZD_STORE.settings || {};
+        const lists = settings.custom_lists || {};
+
+        // STEP 1: BUILD UI
+        EZD_UI.init(document.getElementById('admin-module-root'));
+
+        // STEP 2: FILL INPUTS
+        const simpleMap = {
+            'production_title': settings.production_title,
+            'org_name': settings.org_name,
+            'academic_year': settings.academic_year,
+            'dropdown_org_type': settings.org_type,
+            'default_landing_module': settings.default_landing_module
+        };
+
+        Object.keys(simpleMap).forEach(id => {
+            if(simpleMap[id]) EZD_UI.setValue(id, simpleMap[id]);
+        });
+
+        // STEP 3: FILL LISTS (Advanced Cleaner)
+        const toObjArray = (arr, keyName) => {
+            if (!Array.isArray(arr)) return [];
+            return arr.map(item => {
+                // 1. Fix Double Serialization (The "{" bug)
+                if (typeof item === 'string' && item.trim().startsWith('{')) {
+                    try { item = JSON.parse(item); } catch(e) {}
+                }
+                
+                // 2. Already an object? Return it.
+                if (typeof item === 'object' && item !== null) return item;
+                
+                // 3. Simple String? Wrap it.
+                let obj = {};
+                obj[keyName] = item;
+                return obj;
+            });
+        };
+
+        EZD_UI.setValue('adminRoles', toObjArray(lists.roles, "Role Name"));
+        EZD_UI.setValue('adminGroups', toObjArray(lists.groups, "Group Name"));
+        EZD_UI.setValue('adminCharacters', lists.characters || []);
+        EZD_UI.setValue('adminLocations', lists.locations || []);
+
+        // STEP 4: START DIRTY CHECKING (With Safety)
+        setTimeout(() => this.setupDirtyCheck(), 200); // Small delay to ensure DOM is ready
+        
+        console.log("✅ Admin UI Populated");
+    },
+
+    getSnapshot: function() {
+        return JSON.stringify({
+            production_title: EZD_UI.getComponentValue('production_title'),
+            org_name: EZD_UI.getComponentValue('org_name'),
+            academic_year: EZD_UI.getComponentValue('academic_year'),
+            org_type: EZD_UI.getComponentValue('dropdown_org_type'),
+            default_landing_module: EZD_UI.getComponentValue('default_landing_module'),
+            custom_lists: {
+                roles: JSON.parse(EZD_UI.getComponentValue('adminRoles') || "[]"),
+                groups: JSON.parse(EZD_UI.getComponentValue('adminGroups') || "[]"),
+                characters: JSON.parse(EZD_UI.getComponentValue('adminCharacters') || "[]"),
+                locations: JSON.parse(EZD_UI.getComponentValue('adminLocations') || "[]")
+            }
+        });
+    },
+
+    saveAllLists: function() {
+        const payload = JSON.parse(this.getSnapshot());
+        EZD_UI.setButtonState('btnSaveAdmin', 'saving');
+        
+        window.EZD_STORE.settings = { ...window.EZD_STORE.settings, ...payload };
+        window.EZD_STORE.settings.custom_lists = payload.custom_lists;
+
+        google.script.run
+            .withSuccessHandler(() => {
+                EZD_UI.setButtonState('btnSaveAdmin', 'success');
+                window._adminBaseline = this.getSnapshot(); 
+                if(typeof audio !== 'undefined') audio.play('success');
+            })
+            .withFailureHandler((err) => {
+                EZD_UI.setButtonState('btnSaveAdmin', 'error');
+                console.error(err);
+            })
+            .saveAdminSettings(payload);
+    },
+
+    setupDirtyCheck: function() {
+        // --- SAFETY CHECK ---
+        const form = document.getElementById('admin-form');
+        if (!form) {
+            console.warn("⚠️ Admin Form ID not found. Dirty check disabled.");
+            return;
+        }
+
+        window._adminBaseline = this.getSnapshot();
+
+        form.addEventListener('change', () => {
+            setTimeout(() => {
+                const current = this.getSnapshot();
+                const isDirty = (current !== window._adminBaseline);
+                if (isDirty) EZD_UI.setButtonState('btnSaveAdmin', 'dirty');
+                else EZD_UI.setButtonState('btnSaveAdmin', 'idle');
+            }, 50);
+        });
+        // Also listen for keyup for faster text feedback
+        form.addEventListener('keyup', () => {
+             // Optional: Debounce this if it's too heavy
+        });
+    }
+};
+
+window.switchAdminTab = function(t) {
+    document.querySelectorAll('.admin-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+    
+    document.getElementById('tabBtn_' + t)?.classList.add('active');
+    document.getElementById('tab-' + t)?.classList.add('active');
+};
+
+window.handleSaveClick = function() {
+    window.AdminModule.saveAllLists();
+};
+
+window.confirmSystemReset = function() {
+    EZD_UI.confirm({
+        type: "danger",
+        title: "Factory Reset",
+        message: "This will wipe all settings and return to the Setup Wizard. Are you sure?",
+        confirmText: "Yes, Reset"
+    }).then(res => {
+        if(res) loadModule('setup');
+    });
+};
+
+setTimeout(() => window.AdminModule.init(), 100);
+</script>
