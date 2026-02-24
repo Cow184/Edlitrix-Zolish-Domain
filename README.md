@@ -1,20 +1,5 @@
-Made with AI, Make it human Made later:
+At my highschool the Director made me the stage manager for the musical production. I gladly took the role and went onto finding out the aspects of making the role easier for me. I went down a rabbit hole from trying to automate the googlesheet using the equations used for each cell, discovering app scripts and that it make thing alot better. and then got curiouse to what the Deployments ment in app scripts. Tested it out, loved it, then on that point i decided to spend all my time on making a webpage using AI(I'm not smart enough and don't got the time for it). I've spent alot of time on this and don't want to restrict it to just myself, but to others who may find this useful. I plan on making a tutorial and instructions on how to implement this into you're own production or class, or life, or whatever, I'm trying to make it dynamic between everything. If you got questions or want to educated me before i make a big mistake, please tell me, I don't want to deal with additional stress and to get this out mcuh earlier.
 
-🎭 Mission Statement: Built for the Stage, Not the Spreadsheet
-This project was created to solve a problem that plagues drama departments, community theaters, and independent troupes: the "Subscription Tax" on creativity.
-Modern theatrical production is complex, and while there are many tools available to manage the workflow, most are owned by companies that prioritize monthly fees over the art itself. This software exists to provide a professional-grade organization system that remains:
-Accessible: No paywalls, no "premium tiers," and no subscriptions.
-Transparent: Built by someone who cares about theater, for people who make theater happen.
-Community-Owned: Because this code is licensed under CC BY-NC-SA 4.0, it can never be "bought out" or locked behind a paywall. It belongs to the theater community.
-My goal is simple: To give schools and troupes the tools they need to spend less time managing spreadsheets and more time under the lights.
+What this is: the code is meant to be placed inside of a app scripts that's bound to a google sheet. App Sheets is also used for the barcode scanner check-ins.
 
-🛠️ How You Can Use This
-Schools & Universities: Use this to manage your entire season's production calendar and tech notes for free.
-Community Theaters: Keep your volunteer teams organized without eating into your costume or set budget.
-Developers: Help me grow this! If you have ideas to make the theater world better, your contributions are welcome—provided they stay free for everyone.
-
-⚖️ License Summary
-This project is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0.
-Attribute: Please keep my name on the project so others can find the source.
-Non-Commercial: You may not sell this software or charge others to use it.
-Share-Alike: Any improvements you make must be shared back with the community under this same license.
+Materials: A google account. You just need a google account that has access to deployments from app scripts, app sheets, and google sheets.
