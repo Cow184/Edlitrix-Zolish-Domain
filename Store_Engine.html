@@ -1,0 +1,123 @@
+<script>
+/**
+ * ==========================================
+ * FRONTEND STATE MANAGER (V6 - Silent Poller)
+ * ==========================================
+ */
+(function() {
+    window.EZD_STORE = window.EZD_STORE || { 
+        people: [], 
+        events: [], 
+        attendance: [], 
+        coreReady: false,
+        liveReady: false,
+        lastActivity: Date.now(),
+        isAsleep: false 
+    };
+
+    let lastCoreSyncTime = Date.now();
+    const SLEEP_THRESHOLD = 300000; // 5 Minutes
+    const CORE_SYNC_INTERVAL = 120000; // 2 Minutes
+
+    const updateActivity = () => { 
+        window.EZD_STORE.lastActivity = Date.now(); 
+        
+        if (window.EZD_STORE.isAsleep) {
+            console.log("☀️ [SYSTEM] Activity detected. Waking up...");
+            window.EZD_STORE.isAsleep = false;
+            
+            window.EZD_SYNC.pullCore(true);
+            if (document.getElementById('attendance-module-root')) {
+                window.EZD_SYNC.pullLive(true);
+            }
+        }
+    };
+
+    ['mousemove', 'keydown', 'touchstart', 'scroll', 'click'].forEach(evt => {
+        window.addEventListener(evt, updateActivity, { passive: true });
+    });
+
+    window.EZD_SYNC = {
+        pullCore: function(silent = false) {
+            google.script.run.withSuccessHandler(json => {
+                try {
+                    const res = JSON.parse(json);
+                    if(res.success) {
+                        const newPeopleStr = JSON.stringify(res.people);
+                        const newEventsStr = JSON.stringify(res.events);
+                        const oldPeopleStr = JSON.stringify(window.EZD_STORE.people);
+                        const oldEventsStr = JSON.stringify(window.EZD_STORE.events);
+
+                        if (newPeopleStr !== oldPeopleStr || newEventsStr !== oldEventsStr || !window.EZD_STORE.coreReady) {
+                            window.EZD_STORE.people = res.people;
+                            window.EZD_STORE.events = res.events;
+                            window.EZD_STORE.coreReady = true;
+                            window.dispatchEvent(new CustomEvent('fdsCoreReady')); 
+                        }
+                        lastCoreSyncTime = Date.now();
+                    }
+                } catch(e) {}
+            }).getCoreStore();
+        },
+        
+        pullLive: function(silent = false) {
+            google.script.run.withSuccessHandler(json => {
+                try {
+                    const res = JSON.parse(json);
+                    if(res.success) {
+                        // Silent Heartbeat
+                        window.dispatchEvent(new CustomEvent('fdsLiveHeartbeat')); 
+                        
+                        const newAttStr = JSON.stringify(res.attendance);
+                        const oldAttStr = JSON.stringify(window.EZD_STORE.attendance);
+
+                        if (newAttStr !== oldAttStr || !window.EZD_STORE.liveReady) {
+                            window.EZD_STORE.attendance = res.attendance;
+                            window.EZD_STORE.liveReady = true;
+                            window.dispatchEvent(new CustomEvent('fdsLiveReady')); 
+                        }
+                    }
+                } catch(e) {}
+            }).getAttendanceStore();
+        }
+    };
+
+    // --- 1. INITIAL BOOT ---
+    console.log("🚀 [SYSTEM] FDS Core Engine initialized.");
+    window.EZD_SYNC.pullCore(true);
+    window.EZD_SYNC.pullLive(true);
+
+    // --- 2. ACTIVE POLLER (Core Data) ---
+    setInterval(() => {
+        const timeSinceActivity = Date.now() - window.EZD_STORE.lastActivity;
+        const timeSinceSync = Date.now() - lastCoreSyncTime;
+
+        if (timeSinceActivity > SLEEP_THRESHOLD) {
+            if (!window.EZD_STORE.isAsleep) {
+                console.log("🌙 [SYSTEM] Idle for 5 minutes. Entering Sleep Mode.");
+                window.EZD_STORE.isAsleep = true;
+            }
+        } else if (timeSinceSync > CORE_SYNC_INTERVAL) {
+            window.EZD_SYNC.pullCore(true);
+        }
+    }, 60000); 
+
+    // --- 3. TAB VISIBILITY SENSOR ---
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            const timeSinceSync = Date.now() - lastCoreSyncTime;
+            if (timeSinceSync > SLEEP_THRESHOLD) updateActivity(); 
+        }
+    });
+
+    // --- 4. FAST LIVE POLLER (Attendance Matrix) ---
+    setInterval(() => {
+        if (!window.EZD_STORE.isAsleep) {
+            if (document.getElementById('attendance-module-root')) {
+                window.EZD_SYNC.pullLive(true); 
+            }
+        }
+    }, 5000); 
+
+})();
+</script>
