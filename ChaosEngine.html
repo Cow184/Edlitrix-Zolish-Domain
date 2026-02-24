@@ -1,0 +1,176 @@
+<script>
+/**
+ * FDS PRO - CHAOS ENGINE MODULE
+ * Handles high-performance rendering of mathematical attractors.
+ */
+window.ChaosEngine = {
+    canvas: null,
+    ctx: null,
+    animationId: null,
+    
+    // Configuration State
+    config: {
+        mode: 'lorenz', 
+        theme: 'light',
+        active: false
+    },
+
+    // Physics State
+    state: { x: 0.1, y: 0, z: 0, points: [] },
+
+    init: function() {
+        this.canvas = document.getElementById('globalChaosCanvas');
+        if(!this.canvas) return;
+        this.ctx = this.canvas.getContext('2d');
+        
+        window.addEventListener('resize', () => this.resize());
+        this.resize();
+    },
+
+    configure: function(prefs) {
+        this.config.theme = prefs.theme;
+        
+        // If mode changed, reset physics
+        if (this.config.mode !== prefs.bg) {
+            this.config.mode = prefs.bg;
+            this.resetPhysics();
+        }
+
+        // Handle Active State
+        if (prefs.bg === 'clean') {
+            this.stop();
+            if(this.canvas) this.canvas.style.display = 'none';
+        } else {
+            if(this.canvas) this.canvas.style.display = 'block';
+            this.start();
+        }
+    },
+
+    resetPhysics: function() {
+        this.state.points = [];
+        // Slight asymmetry prevents 1D lock-up
+        this.state.x = 1.0; 
+        this.state.y = 0.5; 
+        this.state.z = 0.5;
+    },
+
+    resize: function() {
+        if(!this.canvas) return;
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.state.points = []; 
+    },
+
+    start: function() {
+        if (!this.config.active) {
+            this.config.active = true;
+            this.loop();
+        }
+    },
+
+    stop: function() {
+        this.config.active = false;
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+    },
+
+    loop: function() {
+        if (!this.config.active) return;
+
+        // 1. Fade Effect (Trails)
+        this.ctx.fillStyle = this.config.theme === 'dark' 
+            ? 'rgba(30, 41, 59, 0.02)' 
+            : 'rgba(248, 250, 252, 0.02)';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // 2. Physics Calculation
+        let dx, dy, dz, dt, scale;
+        let x = this.state.x, y = this.state.y, z = this.state.z;
+
+        switch (this.config.mode) {
+            case 'lorenz':
+                // The Butterfly
+                dt = 0.0025; scale = 55;
+                dx = (10 * (y - x)) * dt;
+                dy = (x * (28 - z) - y) * dt;
+                dz = (x * y - (8/3) * z) * dt;
+                break;
+
+            case 'thomas':
+                // The Cloud
+                dt = 0.08; scale = 200;
+                dx = (Math.sin(y) - 0.19 * x) * dt;
+                dy = (Math.sin(z) - 0.19 * y) * dt;
+                dz = (Math.sin(x) - 0.19 * z) * dt;
+                break;
+
+            case 'aizawa':
+                // The Sphere-Tube (Scaled Up 60%)
+                dt = 0.008; scale = 400; 
+                const a = 0.95, b = 0.7, c = 0.6, d = 3.5, e = 0.25, f = 0.1;
+                dx = ((z - b) * x - d * y) * dt;
+                dy = (d * x + (z - b) * y) * dt;
+                dz = (c + a * z - (z * z * z) / 3 - (x * x + y * y) * (1 + e * z) + f * z * x * x * x) * dt;
+                break;
+
+            case 'halvorsen':
+                // The Infinite Knot
+                dt = 0.004; scale = 140;
+                const h = 1.4;
+                dx = (-h * x - 4 * y - 4 * z - y * y) * dt;
+                dy = (-h * y - 4 * z - 4 * x - z * z) * dt;
+                dz = (-h * z - 4 * x - 4 * y - x * x) * dt;
+                break;
+
+            case 'dadras':
+                // The Twisted 8 (Scaled Up 40%)
+                dt = 0.003; scale = 100;
+                dx = (y - 3 * x + 2.7 * y * z) * dt;
+                dy = (1.7 * y - x * z + z) * dt;
+                dz = (2 * x * y - 9 * z) * dt;
+                break;
+                
+            default: 
+                dt = 0.002; scale = 55;
+                dx = (10 * (y - x)) * dt;
+                dy = (x * (28 - z) - y) * dt;
+                dz = (x * y - (8/3) * z) * dt;
+        }
+
+        // Update State
+        this.state.x += dx; this.state.y += dy; this.state.z += dz;
+        this.state.points.push({ x: this.state.x, y: this.state.y, z: this.state.z });
+        if (this.state.points.length > 1200) this.state.points.shift();
+
+        // 3. Render
+        this.ctx.beginPath();
+        const hue = (this.state.z * 4) + (Date.now() / 150) % 360;
+        this.ctx.strokeStyle = `hsl(${hue}, 60%, 50%)`;
+        this.ctx.lineWidth = 1.2;
+
+        for (let i = 1; i < this.state.points.length; i++) {
+            const p1 = this.state.points[i - 1];
+            const p2 = this.state.points[i];
+            
+            // PROJECTION MAPPING (Auto-Rotation)
+            let x1_2d, y1_2d, x2_2d, y2_2d;
+
+            if (this.config.mode === 'lorenz' || this.config.mode === 'dadras') {
+                // Vertical Rotation (X vs Z)
+                const offset = (this.config.mode === 'lorenz') ? 25 : 0;
+                x1_2d = p1.x * scale; y1_2d = (p1.z - offset) * scale;
+                x2_2d = p2.x * scale; y2_2d = (p2.z - offset) * scale;
+            } else {
+                // Standard Rotation (X vs Y) - Best for Aizawa/Halvorsen/Thomas
+                x1_2d = p1.x * scale; y1_2d = p1.y * scale;
+                x2_2d = p2.x * scale; y2_2d = p2.y * scale;
+            }
+
+            this.ctx.moveTo(this.canvas.width / 2 + x1_2d, this.canvas.height / 2 + y1_2d);
+            this.ctx.lineTo(this.canvas.width / 2 + x2_2d, this.canvas.height / 2 + y2_2d);
+        }
+        this.ctx.stroke();
+
+        this.animationId = requestAnimationFrame(() => this.loop());
+    }
+};
+</script>
