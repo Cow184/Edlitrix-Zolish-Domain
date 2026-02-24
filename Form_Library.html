@@ -1,0 +1,439 @@
+<style>
+    /* --- SHARED FORM CSS --- */
+    .form-section-title { 
+        font-size: 11px; font-weight: 700; color: var(--text-light, #64748b); 
+        text-transform: uppercase; margin: 20px 0 10px 0; 
+        border-bottom: 2px solid var(--primary-color, #8B0000); 
+        opacity: 0.8;
+        padding-bottom: 5px; 
+    }
+
+    /* --- PEOPLE FORM TABS --- */
+    .ezd-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--ezd-border); margin-bottom: 20px; }
+    .ezd-tab { padding: 10px 5px; cursor: pointer; color: var(--ezd-text-light); border-bottom: 2px solid transparent; font-weight: 600; font-size: 13px; transition: 0.2s; }
+    .ezd-tab:hover { color: var(--ezd-text); }
+    .ezd-tab.active { color: var(--ezd-primary); border-color: var(--ezd-primary); }
+    
+    .ezd-tab-content { display: none; padding-top: 5px; }
+    .ezd-tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .profile-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--ezd-bg); display: none; }
+    .profile-preview.visible { display: block; }
+
+    /* --- EVENT CONTEXT MENU --- */
+    .context-menu {
+        position: fixed; 
+        background: var(--bg-color, #ffffff); border: 1px solid var(--ezd-border, #e2e8f0); 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25); border-radius: 8px; 
+        z-index: 999999; display: none; width: 180px; overflow: hidden;
+    }
+    body.ezd-dark-mode .context-menu { background: #1e293b; border-color: #334155; }
+    .context-item { padding: 10px 15px; cursor: pointer; display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--text-color, #334155); }
+    .context-item:hover { background: rgba(0,0,0,0.05); }
+    body.ezd-dark-mode .context-item:hover { background: rgba(255,255,255,0.05); }
+    .context-item i { width: 16px; text-align: center; color: var(--text-light, #64748b); }
+
+    /* --- MODAL RESPONSIVENESS --- */
+    @media (min-width: 769px) {
+        .ezd-dialog-overlay:not(.centered-modal) {
+            left: 250px !important;
+            width: calc(100% - 250px) !important;
+        }
+    }
+    /* ==========================================
+       PROTECTIVE VALIDATION (NO LAYOUT SHIFT)
+       ========================================== */
+    .invalid, 
+    .ezd-smart-input.invalid, 
+    .ezd-input-wrapper.invalid {
+        border-color: #ef4444 !important;
+        /* Use inset box-shadow instead of border-width so the element doesn't grow */
+        box-shadow: inset 0 0 0 1px #ef4444, 0 0 8px rgba(239, 68, 68, 0.2) !important;
+        /* Hardware-accelerated transform prevents layout reflow */
+        animation: ezd-no-shift-shake 0.4s cubic-bezier(.36,.07,.19,.97) both !important;
+    }
+
+    @keyframes ezd-no-shift-shake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-5px); }
+        40%, 80% { transform: translateX(5px); }
+    }
+</style>
+
+<div class="ezd-dialog-overlay" id="eventModal">
+    <div class="ezd-dialog-box" style="position:relative; max-width:800px;">
+        <div id="eventLoader" class="ezd-loader-overlay"><div class="ezd-spinner"></div><div style="font-weight:600; color:var(--text-light);">Loading Event...</div></div>
+
+        <div class="ezd-dialog-banner" style="background: linear-gradient(135deg, var(--primary-color) 0%, #000 100%); color: white; padding: 15px 25px;">
+            <span class="ezd-banner-prod" style="font-size: 10px; opacity: 0.7;">LOGISTICS</span>
+            <span class="ezd-banner-type" style="font-size: 14px; font-weight: 600; margin-left: 10px;">Event Detail</span>
+        </div>
+
+        <div class="ezd-dialog-content">
+            <input type="hidden" id="EventID" class="ezd-store">
+            <div style="display:grid; grid-template-columns: 3fr 1fr; gap:15px;">
+                <div data-ezd-type="input" id="Title" data-label="Event Title" data-icon="fa-heading"></div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div id="Type" data-ezd-type="select" data-label="Event Type" data-ezd-options='["Rehearsal", "Performance", "Meeting", "Fitting", "Work", "Other"]'></div>
+                <div id="Status" data-ezd-type="select" data-label="Status" data-ezd-options='["Scheduled", "Completed", "Cancelled", "Archived"]'></div>
+            </div>
+
+            <div class="form-section-title">When & Where</div>
+            <div style="display:grid; grid-template-columns: 1fr 1.2fr 1fr; gap:15px;">
+                <div data-ezd-type="drum-date" id="Date" data-label="Date"></div>
+                <div id="EventTimeRange" data-ezd-type="drum-time-range" data-label="Event Time" data-mode="12h"></div>
+                <div data-ezd-type="select" id="Location" data-label="Location" data-ezd-list="locations"></div>
+            </div>
+
+            <div class="form-section-title">The Call (Who needs to be here?)</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div data-ezd-type="multiselect" id="RequiredGroups" data-label="Groups" data-ezd-list="groups"></div>
+                <div data-ezd-type="multiselect" id="RequiredRoles" data-label="Roles" data-ezd-list="roles"></div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:10px;">
+                <div data-ezd-type="multiselect" id="RequiredCharacters" data-label="Characters" data-ezd-list="characters"></div>
+                <div data-ezd-type="multiselect" id="RequiredPeople" data-label="Specific People" data-ezd-list="people"></div>
+            </div>
+
+            <div class="form-section-title">Tech & Settings</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div>
+                    <div data-ezd-type="input" id="Notes" data-label="Public Notes"></div>
+                    <div style="display:grid; grid-template-columns: 1fr 1.5fr 1fr; gap:10px; margin-top:10px;">
+                        <div data-ezd-type="input" id="GracePeriod" data-label="Grace (min)"></div>
+                        <div data-ezd-type="input" id="LocationGPS" data-label="GPS (Lat,Long)"></div>
+                        <div data-ezd-type="input" id="MeterTolerance" data-label="GPS Tol (m)"></div>
+                    </div>
+                </div>
+                <div style="background:rgba(0,0,0,0.03); padding:15px; border-radius:8px; border:1px solid var(--ezd-border); display:flex; flex-direction:column; gap:10px;">
+                    <div data-ezd-type="toggle" id="AutoBarcode" data-label="Enable Barcode check-ins"></div>
+                    <div data-ezd-type="toggle" id="SyncGoogleCalendar" data-label="Sync to Google Calendar"></div>
+                    <div data-ezd-type="toggle" id="LocationBarcodeCheck" data-label="Enforce Location Check-in"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ezd-dialog-footer" style="justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 10px;">
+                <button class="ezd-btn secondary" onclick="_closeEventModal()">Cancel</button>
+                <button class="ezd-btn secondary" onclick="EventsModule.duplicateEvent()"><i class="fas fa-copy"></i> Duplicate</button>
+                <div id="saveEventBtn" data-ezd-type="save-button" data-label="Save Event" onclick="EventsModule.saveEvent()"></div>
+            </div>
+            <button class="ezd-btn secondary" style="color:#ef4444; border-color:#ef4444;" onclick="EventsModule.archiveEvent()">
+                <i class="fas fa-trash"></i> Archive
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="eventContextMenu" class="context-menu">
+    <div class="context-item" onclick="EventsModule.handleContextAction('edit')"><i class="fas fa-edit"></i> Edit Details</div>
+    <div class="context-item" onclick="EventsModule.handleContextAction('attendance')"><i class="fas fa-check-square"></i> Attendance</div>
+    <div class="context-item" onclick="EventsModule.handleContextAction('report')"><i class="fas fa-file-alt"></i> Rehearsal Report</div>
+    <div style="border-top:1px solid var(--ezd-border); margin:5px 0;"></div>
+    <div class="context-item" onclick="EventsModule.handleContextAction('duplicate')"><i class="fas fa-copy"></i> Duplicate</div>
+</div>
+
+<div class="ezd-dialog-overlay" id="personModal">
+    <div class="ezd-dialog-box" style="position:relative;">
+        <div id="modalLoader" class="ezd-loader-overlay" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:50; flex-direction:column; align-items:center; justify-content:center;">
+            <div class="ezd-spinner"></div>
+        </div>
+
+        <div class="ezd-dialog-banner" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <span class="ezd-banner-prod" style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; font-weight: 700;">PRODUCTION</span>
+            <span class="ezd-banner-type" style="font-size: 14px; font-weight: 600;">Profile Editor</span>
+        </div>
+
+        <div class="ezd-dialog-content">
+            <div class="ezd-tabs">
+                <div class="ezd-tab active" onclick="switchFormTab('basic')">Basic Info</div>
+                <div class="ezd-tab" onclick="switchFormTab('wardrobe')">Wardrobe</div>
+                <div class="ezd-tab" onclick="switchFormTab('experience')">Experience</div>
+                <div class="ezd-tab" onclick="switchFormTab('emergency')">Emergency</div>
+                <div class="ezd-tab" onclick="switchFormTab('system')">System & Photo</div>
+            </div>
+
+            <div id="tab-basic" class="ezd-tab-content active">
+                <div class="ezd-input-group">
+                    <label class="ezd-label">System ID</label>
+                    <input type="text" id="SystemID" class="ezd-smart-input" readonly style="background:#f1f5f9; color:#94a3b8;">
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1.5fr; gap:12px; margin-top:10px;">
+                    <div data-ezd-type="input" id="StudentID" data-label="Student ID" data-icon="fa-id-card"></div>
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:10px;">
+                        <div data-ezd-type="multiselect" id="CharacterName" data-label="Character" data-ezd-list="characters"></div>
+                        <div data-ezd-type="input" id="CharacterAbbr" data-label="Abbr"></div>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+                    <div data-ezd-type="input" id="FirstName" data-label="First Name"></div>
+                    <div data-ezd-type="input" id="MiddleName" data-label="Middle"></div>
+                    <div data-ezd-type="input" id="LastName" data-label="Last Name"></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px; margin-top:10px;">
+                    <div data-ezd-type="input" id="Email" data-label="Email" data-icon="fa-envelope"></div>
+                    <div data-ezd-type="input" id="Phone" data-label="Phone" data-icon="fa-phone" data-mask="phone"></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px;">
+                    <div data-ezd-type="select" id="Role" data-label="Role" data-ezd-list="roles"></div>
+                    <div data-ezd-type="drum-date" id="BirthDate" data-label="Birth Date"></div>
+                </div>
+                <div style="margin-top:15px;"><div data-ezd-type="segmented" id="GradeLevel" data-label="Grade Level" data-options='["9th","10th","11th","12th"]'></div></div>
+                <div style="margin-top:10px;"><div data-ezd-type="multiselect" id="Groups" data-label="Groups" data-ezd-list="groups"></div></div>
+                <div style="margin-top:10px;"><div data-ezd-type="color-picker" id="AvatarColor" data-label="Badge Color"></div></div>
+            </div>
+
+            <div id="tab-wardrobe" class="ezd-tab-content">
+                <div style="margin-bottom:12px;"><div data-ezd-type="select" id="Gender" data-label="Gender" data-ezd-options='["Male","Female","Non-Binary","Prefer not to say"]'></div></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div data-ezd-type="unit-input" id="Height" data-label="Height" data-unit-type="height"></div>
+                    <div data-ezd-type="input" id="ShoeSize" data-label="Shoe Size" data-icon="fa-shoe-prints"></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                    <div data-ezd-type="select" id="ShirtSize" data-label="Shirt Size" data-ezd-options='["XS","S","M","L","XL","2XL"]'></div>
+                    <div data-ezd-type="select" id="PantsSize" data-label="Pants Size" data-ezd-options='["XS","S","M","L","XL","2XL"]'></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:15px;">
+                    <div data-ezd-type="input" id="ChestSize" data-label="Chest (in)"></div>
+                    <div data-ezd-type="input" id="WaistSize" data-label="Waist (in)"></div>
+                    <div data-ezd-type="input" id="Inseam" data-label="Inseam (in)"></div>
+                </div>
+                <div style="margin-top:15px;"><div data-ezd-type="input" id="WardrobeNotes" data-label="Wardrobe Notes" data-icon="fa-sticky-note"></div></div>
+            </div>
+
+            <div id="tab-experience" class="ezd-tab-content">
+                <div style="margin-top:15px;"><div data-ezd-type="select" id="VocalRange" data-label="Vocal Range" data-ezd-options='["Soprano","Alto","Tenor","Bass","None"]'></div></div>
+                <div style="margin-top:15px;"><div data-ezd-type="segmented" id="DanceLevel" data-label="Dance Level" data-options='["None","Beg","Int","Adv"]'></div></div>
+                <div style="margin-top:15px;"><div data-ezd-type="input" id="CrewInterests" data-label="Crew Interests"></div></div>
+                <div style="margin-top:10px;"><div data-ezd-type="input" id="Instruments" data-label="Instruments"></div></div>
+                <div style="margin-top:10px;"><div data-ezd-type="input" id="Certifications" data-label="Certifications"></div></div>
+            </div>
+
+            <div id="tab-emergency" class="ezd-tab-content">
+                <h4 style="margin:0 0 10px 0; color:#64748b; font-size:11px; text-transform:uppercase;">Primary Contact</h4>
+                <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px;">
+                    <div data-ezd-type="input" id="EmergencyContact1" data-label="Name" data-icon="fa-user-shield"></div>
+                    <div data-ezd-type="select" id="EmergencyRel1" data-label="Relationship" data-ezd-options='["Parent","Guardian","Sibling","Grandparent","Other"]'></div>
+                </div>
+                <div style="margin-top:10px;"><div data-ezd-type="input" id="EmergencyPhone1" data-label="Phone" data-icon="fa-phone" data-mask="phone"></div></div>
+
+                <hr style="margin:20px 0; border:0; border-top:1px dashed #e2e8f0;">
+
+                <h4 style="margin:0 0 10px 0; color:#64748b; font-size:11px; text-transform:uppercase;">Secondary Contact</h4>
+                <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:12px;">
+                    <div data-ezd-type="input" id="EmergencyContact2" data-label="Name" data-icon="fa-user-shield"></div>
+                    <div data-ezd-type="select" id="EmergencyRel2" data-label="Relationship" data-ezd-options='["Parent","Guardian","Sibling","Grandparent","Other"]'></div>
+                </div>
+                <div style="margin-top:10px;"><div data-ezd-type="input" id="EmergencyPhone2" data-label="Phone" data-icon="fa-phone" data-mask="phone"></div></div>
+            </div>
+
+            <div id="tab-system" class="ezd-tab-content">
+                <div style="display:flex; justify-content:center;"><img id="existingPhoto" class="profile-preview" src=""></div>
+                <div data-ezd-type="file-upload" id="ProfilePhotoURL" data-label="Profile Photo" data-max-kb="5000"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;">
+                    <div data-ezd-type="select" id="PersonStatus" data-label="Status" data-ezd-options='["Active","Inactive","Alumni","Archived"]'></div>
+                    <div data-ezd-type="select" id="Transport" data-label="Transport" data-ezd-options='["Bus","Car","Parent","Walk"]'></div>
+                </div>
+                <div style="margin-top:15px;"><div data-ezd-type="segmented" id="ActivityFee" data-label="Activity Fee" data-options='["Paid","Unpaid","Waived","Partial"]'></div></div>
+                <div style="margin-top:15px;"><div data-ezd-type="toggle" id="PhotoRelease" data-label="Media/Photo Release Signed"></div></div>
+                <hr style="margin:20px 0; border:0; border-top:1px dashed #e2e8f0;">
+                <div data-ezd-type="input" id="PersonNotes" data-label="General Notes" data-icon="fa-sticky-note"></div>
+            </div>
+        </div>
+
+        <div class="ezd-dialog-footer" style="justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 10px;">
+                <button class="ezd-btn secondary" onclick="_closeModal()">Cancel</button>
+                <div id="savePersonBtn" data-ezd-type="save-button" data-label="Save Person" onclick="PeopleModule.savePerson()"></div>
+            </div>
+            <button class="ezd-btn secondary" style="color:#ef4444; border-color:#ef4444;" onclick="PeopleModule.archivePerson()">
+                <i class="fas fa-trash"></i> Archive
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="ezd-dialog-overlay centered-modal" id="commModal">
+    <div class="ezd-dialog-box" style="max-width: 600px;">
+        <div class="ezd-dialog-banner" style="background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; font-weight: 700;">CONNECT</span>
+            <span style="font-size: 14px; font-weight: 600;">Email Blast</span>
+        </div>
+        <div class="ezd-dialog-content">
+            <div style="font-size:13px; color:var(--ezd-text-light); margin-bottom:15px;">Select recipients by category. The list is additive (e.g., Cast + Crew).</div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                <div data-ezd-type="multiselect" id="commRoles" data-label="Roles" data-ezd-list="roles"></div>
+                <div data-ezd-type="multiselect" id="commGroups" data-label="Groups" data-ezd-list="groups"></div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
+                <div data-ezd-type="multiselect" id="commStatus" data-label="Status" data-ezd-options='["Active", "Inactive", "Alumni"]'></div>
+                <div data-ezd-type="multiselect" id="commChars" data-label="Characters" data-ezd-list="characters"></div>
+            </div>
+            <div style="margin-top:15px;">
+                <div data-ezd-type="multiselect" id="commPeople" data-label="Individual People" data-ezd-list="people"></div>
+            </div>
+            <div id="commWarningBox" style="margin-top:20px; padding:12px; background:#fef2f2; border:1px solid #fee2e2; border-radius:8px; display:none;">
+                <div style="font-size:12px; font-weight:700; color:#ef4444; margin-bottom:4px;"><i class="fas fa-exclamation-circle"></i> Missing Emails</div>
+                <div id="commWarningList" style="font-size:12px; color:#b91c1c; line-height:1.4;"></div>
+            </div>
+            <div id="commStats" style="margin-top:10px; text-align:right; font-size:11px; font-weight:700; color:var(--ezd-text-light);">0 recipients selected</div>
+        </div>
+        <div class="ezd-dialog-footer" style="justify-content: flex-end;">
+            <div data-ezd-type="button" data-variant="secondary" data-label="Cancel" onclick="_closeCommModal()"></div>
+            <div data-ezd-type="button" data-label="Open in Gmail" data-icon="fa-paper-plane" onclick="CommModule.send()"></div>
+        </div>
+    </div>
+</div>
+
+<div class="ezd-dialog-overlay centered-modal" id="bulkModal">
+    <div class="ezd-dialog-box" style="max-width: 500px;">
+        <div class="ezd-dialog-banner" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; font-weight: 700;">ORGANIZE</span>
+            <span style="font-size: 14px; font-weight: 600;">Bulk Group Assigner</span>
+        </div>
+        <div class="ezd-dialog-content">
+            <div style="margin-bottom: 20px;"><div data-ezd-type="select" id="bulkTargetGroup" data-label="1. Select Target Group" data-ezd-list="groups"></div></div>
+            <div style="margin-bottom: 10px;"><div data-ezd-type="multiselect" id="bulkPeople" data-label="2. Select People" data-ezd-list="people"></div></div>
+            <div style="background:var(--bg-color); padding:15px; border-radius:8px; border:1px solid var(--ezd-border); font-size:12px; color:var(--text-light);">
+                <i class="fas fa-info-circle"></i> <b>How it works:</b> <br>
+                - <b>"Add to Group"</b> will add the target group to the selected people.<br>
+                - <b>"Remove from Group"</b> will strip the target group from them.
+            </div>
+        </div>
+        <div class="ezd-dialog-footer" style="justify-content: space-between;">
+            <div data-ezd-type="button" data-variant="secondary" data-label="Cancel" onclick="_closeBulkModal()"></div>
+            <div style="display:flex; gap:10px;">
+                <div data-ezd-type="button" data-label="Remove" data-icon="fa-minus-circle" data-variant="secondary" style="color:#ef4444; border-color:#ef4444;" onclick="BulkModule.execute('remove')"></div>
+                <div data-ezd-type="button" data-label="Add to Group" data-icon="fa-plus-circle" onclick="BulkModule.execute('add')"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // GLOBAL MODAL CONTROLLERS
+    // ==========================================
+    
+    // --- EVENTS ---
+    window._openEventModal = function() {
+        const modal = document.getElementById('eventModal');
+        if(window.FDS_UI) { FDS_UI.init(modal); FDS_UI.resetForm(modal); }
+        document.getElementById('EventID').value = "EVT-" + Math.floor(Date.now() / 1000);
+        
+        if(window.FDS_UI) {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            FDS_UI.setValue('Date', dateStr);
+            FDS_UI.setValue('EventTimeRange', '15:30,17:30');
+        }
+        
+        document.getElementById('eventLoader').style.display = 'none';
+        FDS_UI.setButtonState('saveEventBtn', 'idle');
+        modal.classList.add('visible');
+
+        // --- ATTACH LOCATION MONITOR HERE ---
+        // This ensures the UI library has finished building the dropdown before we listen to it
+        const locInput = document.getElementById('Location');
+        if(locInput && !locInput.dataset.monitoring) {
+            locInput.dataset.monitoring = "true"; // Prevent duplicate listeners
+            
+            locInput.addEventListener('change', function(e) {
+                const selectedName = String(e.target.value).trim().toLowerCase();
+                
+                let rawLists = window.EZD_STORE?.settings?.custom_lists || {};
+                if (typeof rawLists === 'string') {
+                    try { rawLists = JSON.parse(rawLists); } catch(err) { rawLists = {}; }
+                }
+                
+                const locationsArray = rawLists.locations || [];
+                const match = locationsArray.find(loc => {
+                   if (!loc) return false;
+                   const locName = loc["Name"] || loc.name || "";
+                   return String(locName).trim().toLowerCase() === selectedName;
+                });
+                
+                if (match && window.FDS_UI) {
+                    FDS_UI.setValue('GracePeriod', match["Grace Period"] || match.GracePeriod || '');
+                    FDS_UI.setValue('LocationGPS', match["GPS"] || match.LocationGPS || '');
+                    FDS_UI.setValue('MeterTolerance', match["Tolerance"] || match.MeterTolerance || '');
+                } else if (window.FDS_UI) {
+                    FDS_UI.setValue('GracePeriod', '');
+                    FDS_UI.setValue('LocationGPS', '');
+                    FDS_UI.setValue('MeterTolerance', '');
+                }
+            });
+        }
+    };
+
+    window._closeEventModal = function() { document.getElementById('eventModal').classList.remove('visible'); };
+
+    // --- PEOPLE: PROFILE ---
+    window.switchFormTab = function(tabName) {
+        var tabs = document.querySelectorAll('#personModal .ezd-tab');
+        var contents = document.querySelectorAll('#personModal .ezd-tab-content');
+        
+        var targetTab = Array.from(tabs).find(function(t) { return t.innerText.toLowerCase().includes(tabName.split(' ')[0]); });
+        
+        // --- THE FIX: Circuit Breaker ---
+        // If the tab is already active, stop the function so the animation doesn't replay!
+        if(targetTab && targetTab.classList.contains('active')) return;
+        // --------------------------------
+        
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        contents.forEach(function(c) { c.classList.remove('active'); });
+        
+        if(targetTab) targetTab.classList.add('active');
+        
+        var content = document.getElementById('tab-' + tabName);
+        if(content) content.classList.add('active');
+    };
+
+    window._openAddModal = function() {
+        var modal = document.getElementById('personModal');
+        if(window.FDS_UI) { FDS_UI.init(modal); FDS_UI.resetForm(modal); }
+        document.getElementById('modalLoader').style.display = 'none';
+        document.getElementById('savePersonBtn').style.pointerEvents = 'auto';
+        document.getElementById('existingPhoto').classList.remove('visible');
+        document.getElementById('existingPhoto').src = "";
+        document.getElementById('SystemID').value = "USR-" + Math.floor(1000 + Math.random() * 9000);
+        modal.classList.add('visible');
+        
+        FDS_UI.setButtonState('savePersonBtn', 'idle');
+        FDS_UI.setValue('Status', 'Active');
+        switchFormTab('basic');
+        
+        setTimeout(function() {
+            if(window.PeopleModule) {
+                window.PeopleModule.baseline = window.PeopleModule.getFormSnapshot();
+                window.PeopleModule.setupDirtyCheck();
+                window.PeopleModule.setupAutofill(); 
+            }
+        }, 50);
+    };
+
+    window._closeModal = function() { document.getElementById('personModal').classList.remove('visible'); };
+
+    // --- PEOPLE: COMMUNICATIONS ---
+    window._openCommModal = function() {
+        var modal = document.getElementById('commModal');
+        if(window.FDS_UI) { FDS_UI.init(modal); FDS_UI.resetForm(modal); }
+        modal.classList.add('visible');
+        if(window.CommModule) window.CommModule.initListeners();
+    };
+
+    window._closeCommModal = function() { document.getElementById('commModal').classList.remove('visible'); };
+
+    // --- PEOPLE: BULK UPDATE ---
+    window._openBulkModal = function() {
+        var modal = document.getElementById('bulkModal');
+        if(window.FDS_UI) { FDS_UI.init(modal); FDS_UI.resetForm(modal); }
+        modal.classList.add('visible');
+    };
+
+    window._closeBulkModal = function() { document.getElementById('bulkModal').classList.remove('visible'); };
+</script>
