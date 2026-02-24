@@ -1,0 +1,754 @@
+<style>
+    /* 1. LAYOUT VARIABLES & RESETS */
+    :root { 
+        --ezd-primary: #8B0000; 
+        --ezd-border: #e2e8f0; 
+        --ezd-text: #334155; 
+        --ezd-text-light: #64748b; 
+    }
+    body.ezd-dark-mode { 
+        --ezd-primary: #ff4d4d; 
+        --ezd-border: #334155; 
+        --ezd-text: #f1f5f9; 
+        --ezd-text-light: #94a3b8;
+    }
+
+    /* 2. MAIN HEADER */
+    .people-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .people-header h2 { color: var(--ezd-primary); margin: 0; }
+    body.ezd-dark-mode .people-header h2 { color: #f8fafc; }
+
+    /* 4. SCROLLBARS */
+    #peopleTableWrapper::-webkit-scrollbar, #censusBars::-webkit-scrollbar { width: 6px; }
+    #peopleTableWrapper::-webkit-scrollbar-thumb, #censusBars::-webkit-scrollbar-thumb { background: var(--ezd-border); border-radius: 10px; }
+    #peopleTableWrapper::-webkit-scrollbar-track, #censusBars::-webkit-scrollbar-track { background: transparent; }
+
+    /* 5. TABLE WRAPPER */
+    #peopleTableWrapper { flex: 1; min-height: 0; }
+
+    /* 6. LAYOUT CONTAINER - THE MATH ENGINE */
+    .ezd-main-content-row { 
+        display: flex; 
+        align-items: flex-start; 
+        width: 100%; 
+        position: relative; 
+        z-index: 5;
+        box-sizing: border-box; 
+    }
+
+    /* --- THE TABLE: 3/16 Start (18.75%) + 10/16 Width (62.5%) = Ends at 13/16 --- */
+    .people-container-box { 
+        margin-left: 6.75% !important; 
+        width: 62.5% !important;        
+        flex-shrink: 0;                 
+        
+        background: rgba(255, 255, 255, 0.90) !important; 
+        backdrop-filter: blur(12px); 
+        border: 1px solid var(--ezd-border); 
+        border-radius: 12px; 
+    }
+    body.ezd-dark-mode .people-container-box { background: rgba(15, 23, 42, 0.90) !important; }
+
+    /* --- THE FILTER BAR: Matches Table Width Exactly --- */
+    .ezd-filter-bar {
+        margin-left: 18.75% !important;
+        width: 62.5% !important;
+        max-width: none !important; 
+        
+        display: grid; 
+        grid-template-columns: 2fr 1fr 1fr 1fr; 
+        gap: 12px; 
+        padding: 15px 0; 
+        margin-bottom: 10px; 
+        align-items: end; 
+    }
+
+    /* --- THE SIDEBAR: Sits in the remaining 3/16 space --- */
+    .ezd-sidebar-rail { 
+        width: 300px; 
+        margin-left: 20px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 20px; 
+    }
+
+    /* 7. WIDGETS */
+    .sidebar-widget {
+        background: #ffffff !important;
+        border: 1px solid var(--ezd-border);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    body.ezd-dark-mode .sidebar-widget { background: #1e293b !important; }
+    
+    #censusBars { max-height: 280px; overflow-y: auto; padding-right: 5px; }
+
+    /* 8. MISC ELEMENTS */
+    .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+    .skeleton-text { height: 10px; width: 70%; margin: 4px 0; }
+    .skeleton-circle { width: 32px; height: 32px; border-radius: 50%; }
+    body.ezd-dark-mode .skeleton { background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%); }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* DARK MODE TABLE OVERRIDES */
+    body.ezd-dark-mode table thead { background: rgba(15,23,42,0.5) !important; border-bottom-color: #334155 !important; }
+    body.ezd-dark-mode table tbody tr { border-bottom-color: #334155 !important; }
+</style>
+
+<div id="people-module-root">
+    <div class="people-header">
+        <h2 style="color:var(--ezd-primary); margin:0;"><i class="fas fa-users"></i> People</h2>
+        <div style="display:flex; gap:10px; align-items: center;">
+            <div data-ezd-type="button" data-label="Quick Assign" data-icon="fa-layer-group" data-variant="secondary" onclick="if(window._openBulkModal) _openBulkModal()"></div>
+            <div data-ezd-type="button" data-label="Communications" data-icon="fa-envelope" data-variant="secondary" onclick="if(window._openCommModal) _openCommModal()"></div>
+            <div data-ezd-type="button" data-label="Add Person" data-icon="fa-user-plus" onclick="if(window._openAddModal) _openAddModal()"></div>
+        </div>
+    </div>
+
+    <div class="ezd-filter-bar">
+        <div data-ezd-type="search" id="peopleSearch" data-placeholder="Search name or character..." style="margin-bottom:0;"></div>
+        <div data-ezd-type="select" id="filterRole" data-label="Roles" data-ezd-list="roles" style="margin-bottom:0;"></div>
+        <div data-ezd-type="select" id="filterGroup" data-label="Groups" data-ezd-list="groups" style="margin-bottom:0;"></div>
+        <div data-ezd-type="select" id="filterStatus" data-label="Status" data-ezd-options='["Active", "Inactive", "Alumni"]' style="margin-bottom:0;"></div>
+    </div>
+
+    <div class="ezd-main-content-row">
+        <div class="ezd-list-container people-container-box" style="overflow:hidden;">
+            <div id="peopleTableWrapper" style="height: calc(100vh - 280px); overflow-y:auto;">
+                <table style="width:100%; border-collapse:collapse; text-align:left;">
+                    <thead style="background:transparent; position:sticky; top:0; z-index:10; border-bottom:1px solid var(--ezd-border);">
+                        <tr style="font-size:11px; color:#64748b; text-transform: uppercase;">
+                            <th style="padding:15px;">Student / Character</th>
+                            <th>Role / Groups</th>
+                            <th>Measurements</th>
+                            <th>Contact</th>
+                            <th style="text-align:right; padding-right:15px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="ezd-sidebar-rail">
+            <div class="sidebar-widget">
+                <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 15px;">Data Health</div>
+                <div id="healthReports"></div>
+            </div>
+            <div class="sidebar-widget">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">The Census</div>
+                    <div style="width: 140px;">
+                        <div data-ezd-type="select" id="statFieldPicker" 
+                             data-placeholder="Analyze By..."
+                             data-ezd-options='["Role", "Groups", "Gender", "DanceLevel", "VocalRange", "ActivityFee", "Transport", "Status", "PhotoRelease"]'>
+                        </div>
+                    </div>
+                </div>
+                <div id="censusBars"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    window.PeopleModule = {
+      archivePerson: async function() {
+            // FIX: Point to PersonStatus
+            const rawEl = document.getElementById('PersonStatus');
+            const id = (window.EZD_UI && window.EZD_UI.getComponentValue) 
+                ? window.EZD_UI.getComponentValue('SystemID') 
+                : (document.getElementById('SystemID') ? document.getElementById('SystemID').value : null);
+                
+            if(!id || id.trim() === "") return; 
+            
+            const confirmed = await window.EZD_UI.confirm({
+                type: 'danger', title: 'Archive Person?', 
+                message: 'This person will turn grey in the spreadsheet. Their past attendance history will be preserved.', 
+                confirmText: 'Yes, Archive'
+            });
+            
+            if(confirmed) {
+                window.EZD_UI.setValue('PersonStatus', 'Archived'); // Point to PersonStatus
+                setTimeout(() => { this.savePerson(); }, 100); 
+            }
+        },
+        baseline: null,
+
+        init: function() {
+            var that = this;
+            this.renderSkeletons();
+            
+            // Listen for FAST stream
+            if (window.EZD_STORE && window.EZD_STORE.coreReady) {
+                setTimeout(function() { that.renderTable(); that.applyFilters(); }, 50);
+            }
+            window.addEventListener('fdsCoreReady', function() { that.renderTable(); that.applyFilters(); });
+            
+            ['peopleSearch', 'filterRole', 'filterGroup', 'filterStatus'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if(el) el.addEventListener('change', function() { that.applyFilters(); });
+            });
+        },
+
+        getSmartColor: function(str) {
+            if(!str) return 'var(--ezd-primary)';
+            var hash = 0;
+            for (var i = 0; i < str.length; i++) { hash = str.charCodeAt(i) + ((hash << 5) - hash); }
+            var h = Math.abs(hash % 360);
+            return 'hsl(' + h + ', 65%, 45%)';
+        },
+
+        renderSkeletons: function() {
+            var tbody = document.getElementById('tableBody');
+            if(!tbody) return;
+            var html = '';
+            for(var i=0; i<6; i++) {
+                html += '<tr style="border-bottom: 1px solid var(--ezd-border);">' +
+                    '<td style="padding:15px; display:flex; gap:10px; align-items:center;">' +
+                        '<div class="skeleton skeleton-circle"></div>' +
+                        '<div style="width:100%"><div class="skeleton skeleton-text" style="width:120px;"></div><div class="skeleton skeleton-text" style="width:80px;"></div></div>' +
+                    '</td>' +
+                    '<td><div class="skeleton skeleton-text"></div><div class="skeleton skeleton-text" style="width:50%;"></div></td>' +
+                    '<td><div class="skeleton skeleton-text"></div></td>' +
+                    '<td><div class="skeleton skeleton-text" style="width:80%;"></div></td>' +
+                    '<td><div class="skeleton skeleton-circle" style="width:28px; height:28px; margin-left:auto;"></div></td>' +
+                '</tr>';
+            }
+            tbody.innerHTML = html;
+        },
+
+        setupAutofill: function() {
+            var charInput = document.getElementById('CharacterName'); 
+            if (!charInput) return;
+            if (charInput.dataset.hasAutofill) return;
+            charInput.dataset.hasAutofill = "true";
+            
+            charInput.addEventListener('change', function(e) {
+                setTimeout(function() {
+                    try {
+                        var val = e.target.value || "[]";
+                        var selected = JSON.parse(val);
+                        if (selected.length > 0) {
+                            var charName = selected[0];
+                            var charList = (window.EZD_STORE && window.EZD_STORE.settings && window.EZD_STORE.settings.custom_lists) ? window.EZD_STORE.settings.custom_lists.characters : [];
+                            
+                            var match = charList.find(function(c) {
+                                var cName = (typeof c === 'object') ? (c["Character Name"] || c.name) : c;
+                                return cName === charName;
+                            });
+
+                            if (match && typeof match === 'object') {
+                                var abbr = match["Abbreviation"] || match[" Abbreviation"] || match.abbr;
+                                if (abbr && window.EZD_UI) EZD_UI.setValue('CharacterAbbr', abbr);
+                            }
+                        }
+                    } catch(err) { console.error("Autofill Error", err); }
+                }, 50); 
+            });
+        },
+
+        renderTable: function(filteredData) {
+            var tbody = document.getElementById('tableBody');
+            if(!tbody) return;
+            
+            var source = filteredData || (window.EZD_STORE ? window.EZD_STORE.people : []);
+            if (Array.isArray(source)) {
+                source = source.filter(function(p) { return p.SystemID && p.SystemID.trim() !== ""; });
+            } else { source = []; }
+
+            if (source.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:40px; color:var(--ezd-text-light);">No members found.</td></tr>'; 
+                return; 
+            }
+            
+            var safeJoin = function(str) {
+                if(!str) return '';
+                try {
+                    if (Array.isArray(str)) return str.join(', ');
+                    if (str.startsWith('[')) { var arr = JSON.parse(str); return Array.isArray(arr) ? arr.join(', ') : str; }
+                    return str;
+                } catch(e) { return str; }
+            };
+
+            var html = "";
+            for (var i = 0; i < source.length; i++) {
+                var p = source[i];
+                var fullName = (p.FirstName || '') + " " + (p.LastName || '');
+                var avatar = p.AvatarColor || this.getSmartColor(fullName);
+                var initial = String(p.FirstName || "U").charAt(0);
+                var charName = safeJoin(p.CharacterName);
+                var groups = safeJoin(p.Groups);
+
+                html += '<tr style="border-bottom: 1px solid var(--ezd-border);">' +
+                    '<td style="padding:15px; font-weight:600; color:var(--ezd-text); display:flex; gap:10px; align-items:center;">' +
+                        '<div style="width:32px; height:32px; background:' + avatar + '; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:12px; flex-shrink:0;">' + initial + '</div>' +
+                        '<div style="min-width:0; overflow:hidden;">' +
+                            '<div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + fullName + '</div>' +
+                            '<div style="font-size:11px; color:var(--ezd-text-light); font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + charName + '</div>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td>' +
+                        '<div style="font-size:12px; font-weight:600; color:var(--ezd-text);">' + (p.Role || '-') + '</div>' +
+                        '<div style="font-size:11px; color:var(--ezd-text-light);">' + groups + '</div>' +
+                    '</td>' +
+                    '<td><div style="font-size:11px; color:var(--ezd-text-light);">' + (p.Height || '-') + ' / ' + (p.ShirtSize || '-') + '</div></td>' +
+                    '<td><div style="font-size:12px; color:var(--ezd-text-light);">' + (p.Email || '-') + '</div></td>' +
+                    '<td style="text-align:right; padding-right:15px;">' +
+                        '<button class="ezd-btn secondary" style="padding:6px 12px; height:32px;" onclick="window.PeopleModule.editPerson(\'' + p.SystemID + '\')"><i class="fas fa-user-edit"></i></button>' +
+                    '</td>' +
+                '</tr>';
+            }
+            tbody.innerHTML = html;
+        },
+
+        applyFilters: function() {
+            var term = (document.getElementById('peopleSearch').value || "").toLowerCase();
+            var role = document.getElementById('filterRole').value || "";
+            var group = document.getElementById('filterGroup').value || "";
+            var status = document.getElementById('filterStatus').value || "";
+
+            var data = window.EZD_STORE.people || [];
+            
+            // --- THE FIX: Hide empty rows AND Archived people ---
+            data = data.filter(function(p) { 
+                return p.SystemID && p.SystemID.trim() !== "" && p.Status !== 'Archived'; 
+            });
+            // ----------------------------------------------------
+            
+            var filtered = data.filter(function(p) {
+                var searchStr = (String(p.FirstName) + " " + String(p.LastName) + " " + String(p.CharacterName)).toLowerCase();
+                var matchesTerm = searchStr.includes(term);
+                var matchesRole = role ? (p.Role === role) : true;
+                var matchesStatus = status ? (p.Status === status) : true;
+
+                var pGroups = [];
+                try { 
+                    if (Array.isArray(p.Groups)) pGroups = p.Groups;
+                    else if (p.Groups.startsWith('[')) pGroups = JSON.parse(p.Groups);
+                    else pGroups = [p.Groups]; 
+                } catch(e) { pGroups = [p.Groups]; }
+                
+                var matchesGroup = group ? pGroups.includes(group) : true;
+                return matchesTerm && matchesRole && matchesStatus && matchesGroup;
+            });
+            this.renderTable(filtered);
+        },
+
+        editPerson: function(sid) {
+            var modal = document.getElementById('personModal');
+            if(!modal && window.EZD_UI) {
+                EZD_UI.notify('error', 'Module Error', 'Form Library not loaded.');
+                return;
+            }
+            if(window.EZD_UI) { EZD_UI.init(modal); EZD_UI.resetForm(modal); }
+            
+            EZD_UI.setButtonState('savePersonBtn', 'idle');
+            
+            var person = window.EZD_STORE.people.find(function(p) { return String(p.SystemID) === String(sid); });
+            if (!person) { EZD_UI.notify('error', 'Error', 'Person not found.'); return; }
+
+            var inputMap = {};
+            modal.querySelectorAll('[id]').forEach(function(el) { inputMap[el.id.toLowerCase().replace(/[^a-z0-9]/g, '')] = el; });
+
+            Object.keys(person).forEach(function(key) {
+                var val = person[key];
+                
+                // FIX: Map database keys to our new unique HTML IDs
+                var searchKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (key === 'Status') searchKey = 'personstatus';
+                if (key === 'Notes') searchKey = 'personnotes';
+                
+                var el = inputMap[searchKey];
+                if (el) {
+                    if (key === 'PhotoRelease' && el.classList.contains('ezd-store')) {
+                        val = (val === "Yes" || val === true);
+                    }
+                    if (el.classList.contains('ezd-store') || el.type === 'hidden') {
+                        if(window.EZD_UI) EZD_UI.setValue(el.id, val);
+                    } else if (el.tagName === 'INPUT') {
+                        el.value = (val && key.includes('Date') && typeof val === 'string') ? val.split('T')[0] : val;
+                    }
+                }
+            });
+
+            modal.classList.add('visible');
+            document.getElementById('savePersonBtn').style.pointerEvents = 'auto';
+            var prev = document.getElementById('existingPhoto');
+            if (person.ProfilePhotoURL && person.ProfilePhotoURL.startsWith('http')) { 
+                prev.src = person.ProfilePhotoURL; prev.classList.add('visible'); 
+            } else { prev.classList.remove('visible'); }
+
+            this.baseline = this.getFormSnapshot();
+            this.setupDirtyCheck();
+            this.setupAutofill(); 
+        },
+
+        getFormSnapshot: function() {
+            var data = {};
+            var selector = '#personModal .ezd-store, #personModal .ezd-smart-input, #personModal textarea';
+            document.querySelectorAll(selector).forEach(function(el) {
+                if(el.id && !el.id.includes('-disp') && !el.id.includes('_')) {
+                    data[el.id] = el.value;
+                }
+            });
+            return JSON.stringify(data);
+        },
+
+            savePerson: function() {
+            // FIX: Check PersonStatus to bypass validation
+            const currentStatus = window.EZD_UI.getComponentValue('PersonStatus') || (document.getElementById('PersonStatus') ? document.getElementById('PersonStatus').value : "");
+            
+            if (currentStatus !== 'Archived') {
+                const requiredFields = ['FirstName', 'LastName', 'Role']; 
+                let hasError = false;
+
+                requiredFields.forEach(id => {
+                    const el = document.getElementById(id);
+                    const val = window.EZD_UI.getComponentValue(id) || (el ? el.value : "");
+                    
+                    if (!val || val.trim() === '') {
+                        hasError = true;
+                        const visibleInput = document.getElementById(id + '-disp') || el;
+                        if (visibleInput) {
+                            visibleInput.classList.remove('invalid');
+                            void visibleInput.offsetWidth; 
+                            visibleInput.classList.add('invalid');
+                            setTimeout(() => visibleInput.classList.remove('invalid'), 500);
+                        }
+                    }
+                });
+
+                if (hasError) {
+                    if(window.switchFormTab) window.switchFormTab('basic');
+                    window.EZD_UI.notify('error', 'Missing Information', 'First Name, Last Name, and Role are required.');
+                    window.EZD_UI.setButtonState('savePersonBtn', 'error'); 
+                    return; 
+                }
+            }
+
+            EZD_UI.setButtonState('savePersonBtn', 'saving');
+            const data = {};
+            
+            var selector = '#personModal .ezd-store, #personModal .ezd-smart-input, #personModal textarea';
+            
+            document.querySelectorAll(selector).forEach(function(el) {
+                if(el.id && !el.id.includes('-disp') && !el.id.includes('_')) {
+                    var val = el.value;
+                    if(el.id === 'PhotoRelease') val = (val === 'true' || val === true) ? "Yes" : "No";
+                    data[el.id] = val;
+                }
+            });
+
+            // FIX: Translate the new IDs back into standard Database Columns
+            if (data['PersonStatus'] !== undefined) {
+                data['Status'] = data['PersonStatus'];
+                delete data['PersonStatus'];
+            }
+            if (data['PersonNotes'] !== undefined) {
+                data['Notes'] = data['PersonNotes'];
+                delete data['PersonNotes'];
+            }
+
+            var store = window.EZD_STORE.people;
+            var idx = store.findIndex(function(p) { return String(p.SystemID) === String(data.SystemID); });
+            if (idx === -1) store.push(data); 
+            else store[idx] = Object.assign({}, store[idx], data);
+
+            this.applyFilters();
+            if(window._closeModal) window._closeModal();
+            EZD_UI.notify('success', 'Profile Saved', 'Updated ' + (data.FirstName || 'Record'));
+            EZD_UI.setButtonState('savePersonBtn', 'success');
+
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if(!res.success) {
+                        EZD_UI.notify('error','Sync Failed', res.message);
+                        EZD_UI.setButtonState('savePersonBtn', 'error'); 
+                    } else {
+                        setTimeout(function() { EZD_UI.setButtonState('savePersonBtn', 'idle'); }, 2000);
+                        if (window.EZD_SYNC) window.EZD_SYNC.pull(true);
+                    }
+                })
+                .processPersonUpdate(data);
+        },
+
+        setupDirtyCheck: function() {
+            var that = this;
+            var modal = document.getElementById('personModal');
+            var check = function() {
+                setTimeout(function() {
+                    var current = that.getFormSnapshot();
+                    var isDirty = (current !== that.baseline);
+                    if (isDirty) EZD_UI.setButtonState('savePersonBtn', 'dirty');
+                    else EZD_UI.setButtonState('savePersonBtn', 'idle');
+                }, 10);
+            };
+            if (modal.dataset.hasListener) return;
+            modal.addEventListener('input', check);
+            modal.addEventListener('change', check);
+            modal.addEventListener('keyup', check);
+            modal.dataset.hasListener = "true";
+        }
+    };
+
+    window.CommModule = {
+        validEmails: [],
+        initListeners: function() {
+            var that = this;
+            var ids = ['commRoles', 'commGroups', 'commStatus', 'commChars', 'commPeople'];
+            ids.forEach(function(id) {
+                var el = document.getElementById(id);
+                if(el && !el.dataset.listening) {
+                    el.addEventListener('change', function() { that.calculateRecipients(); });
+                    el.dataset.listening = "true";
+                }
+            });
+            this.calculateRecipients(); 
+        },
+        calculateRecipients: function() {
+            var getVal = function(id) {
+                try { return JSON.parse(document.getElementById(id).value || "[]"); } 
+                catch(e) { return []; }
+            };
+
+            var selRoles = getVal('commRoles');
+            var selGroups = getVal('commGroups');
+            var selStatus = getVal('commStatus');
+            var selChars = getVal('commChars');
+            var selPeople = getVal('commPeople'); 
+
+            var allPeople = window.EZD_STORE.people || [];
+            var recipients = new Set();
+            var missingEmails = new Set();
+            this.validEmails = [];
+            var that = this;
+
+            allPeople.forEach(function(p) {
+                if(!p.SystemID) return; 
+                var match = false;
+                if (selRoles.indexOf(p.Role) !== -1) match = true;
+                if (selStatus.indexOf(p.Status) !== -1) match = true;
+                var fullName = p.FirstName + " " + p.LastName;
+                if (selPeople.indexOf(fullName) !== -1) match = true;
+
+                var pGroups = [];
+                try {
+                    if (Array.isArray(p.Groups)) pGroups = p.Groups;
+                    else if (p.Groups && p.Groups.startsWith('[')) pGroups = JSON.parse(p.Groups);
+                    else if (p.Groups) pGroups = [p.Groups];
+                } catch(e) { pGroups = [p.Groups]; }
+                if (pGroups.some(function(g) { return selGroups.indexOf(g) !== -1; })) match = true;
+
+                var pChars = [];
+                try {
+                    if (Array.isArray(p.CharacterName)) pChars = p.CharacterName;
+                    else if (p.CharacterName && p.CharacterName.startsWith('[')) pChars = JSON.parse(p.CharacterName);
+                    else if (p.CharacterName) pChars = [p.CharacterName];
+                } catch(e) { pChars = [p.CharacterName]; }
+                if (pChars.some(function(c) { return selChars.indexOf(c) !== -1; })) match = true;
+
+                if (match) {
+                    if (p.Email && p.Email.trim().length > 3 && p.Email.indexOf('@') !== -1) {
+                        if (!recipients.has(p.SystemID)) {
+                            that.validEmails.push(p.Email.trim());
+                            recipients.add(p.SystemID);
+                        }
+                    } else {
+                        missingEmails.add(p.FirstName + " " + p.LastName);
+                    }
+                }
+            });
+
+            var warningBox = document.getElementById('commWarningBox');
+            var warningList = document.getElementById('commWarningList');
+            var statBox = document.getElementById('commStats');
+
+            if (missingEmails.size > 0) {
+                warningBox.style.display = 'block';
+                warningList.innerText = Array.from(missingEmails).join(', ');
+            } else {
+                warningBox.style.display = 'none';
+            }
+            statBox.innerText = this.validEmails.length + " valid recipients selected";
+        },
+        send: function() {
+            if (this.validEmails.length === 0) {
+                if (document.getElementById('commWarningBox').style.display !== 'block') {
+                    EZD_UI.notify('info', 'No Recipients', 'Please select some criteria first.');
+                    return;
+                }
+            }
+            var emailString = this.validEmails.join(',');
+            var url = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(emailString);
+            window.open(url, '_blank');
+            if(window._closeCommModal) window._closeCommModal();
+            EZD_UI.notify('success', 'Gmail Opened', this.validEmails.length + " addresses populated.");
+        }
+    };
+
+    window.BulkModule = {
+        execute: function(action) {
+            var targetGroup = document.getElementById('bulkTargetGroup').value;
+            var peopleNames = [];
+            try { peopleNames = JSON.parse(document.getElementById('bulkPeople').value || "[]"); } catch(e) {}
+
+            if (!targetGroup) { EZD_UI.notify('error', 'Missing Data', 'Please select a Target Group.'); return; }
+            if (peopleNames.length === 0) { EZD_UI.notify('error', 'Missing Data', 'Please select at least one person.'); return; }
+
+            var store = window.EZD_STORE.people;
+            var modifiedCount = 0;
+            var updates = [];
+
+            var getGroups = function(p) {
+                try {
+                    if (Array.isArray(p.Groups)) return p.Groups;
+                    if (typeof p.Groups === 'string' && p.Groups.startsWith('[')) return JSON.parse(p.Groups);
+                    return p.Groups ? [p.Groups] : [];
+                } catch(e) { return []; }
+            };
+
+            peopleNames.forEach(function(fullName) {
+                var person = store.find(function(p) { return (p.FirstName + ' ' + p.LastName) === fullName; });
+                if (person) {
+                    var currentGroups = getGroups(person);
+                    var originalLen = currentGroups.length;
+
+                    if (action === 'add') {
+                        if (currentGroups.indexOf(targetGroup) === -1) {
+                            currentGroups.push(targetGroup);
+                        }
+                    } else if (action === 'remove') {
+                        currentGroups = currentGroups.filter(function(g) { return g !== targetGroup; });
+                    }
+
+                    if (currentGroups.length !== originalLen) {
+                        person.Groups = currentGroups; 
+                        updates.push({ SystemID: person.SystemID, Groups: JSON.stringify(currentGroups) });
+                        modifiedCount++;
+                    }
+                }
+            });
+
+            if (modifiedCount === 0) {
+                EZD_UI.notify('info', 'No Changes', 'Everyone selected is already correct.');
+                return;
+            }
+
+            window.PeopleModule.renderTable(); 
+            if(window._closeBulkModal) window._closeBulkModal();
+            EZD_UI.notify('warning', 'Saving...', 'Syncing ' + modifiedCount + ' people...');
+
+            if (updates.length > 0) {
+                 google.script.run
+                    .withSuccessHandler(function(res) {
+                        if(res.success) {
+                            EZD_UI.notify('success', 'Batch Complete', 'Updated ' + res.count + ' records.');
+                            // TRIGGER BACKGROUND SYNC
+                            if (window.EZD_SYNC) window.EZD_SYNC.pull(true);
+                        }
+                        else EZD_UI.notify('error', 'Batch Failed', res.message);
+                    })
+                    .processBatchUpdate(updates); 
+            }
+        }
+    };
+
+    window.StatsModule = {
+        init: function() {
+            setTimeout(() => {
+                const picker = document.getElementById('statFieldPicker');
+                if(picker) {
+                    if(window.EZD_UI) EZD_UI.setValue('statFieldPicker', 'Role');
+                    picker.addEventListener('change', () => this.updateStats());
+                }
+                this.updateStats();
+            }, 500);
+            window.addEventListener('fdsDataReady', () => this.updateStats());
+            window.addEventListener('fdsDataUpdated', () => this.updateStats());
+        },
+
+        updateStats: function() {
+            const people = window.EZD_STORE.people || [];
+            const picker = document.getElementById('statFieldPicker');
+            const field = (picker && picker.value) ? picker.value : 'Role'; 
+            const healthCont = document.getElementById('healthReports');
+            const censusCont = document.getElementById('censusBars');
+
+            // --- THE FIX: Early Exit if module is not currently visible ---
+            if (!healthCont || !censusCont) return; 
+
+            let missingMeasurements = 0; let missingEmails = 0;
+            people.forEach(p => {
+                if (!p.ChestSize || !p.WaistSize) missingMeasurements++;
+                if (!p.Email || !p.Email.includes('@')) missingEmails++;
+            });
+
+            healthCont.innerHTML = `
+                <div class="health-alert ${missingEmails > 0 ? 'critical' : ''}">
+                    <i class="fas fa-envelope-open-text"></i> <span><b>${missingEmails}</b> missing emails</span>
+                </div>
+                <div class="health-alert ${missingMeasurements > 0 ? 'warning' : ''}">
+                    <i class="fas fa-ruler-combined"></i> <span><b>${missingMeasurements}</b> missing sizes</span>
+                </div>
+            `;
+
+            const counts = {};
+            people.forEach(p => {
+                let rawVal = p[field];
+
+                if (field === 'Groups') {
+                    let groups = [];
+                    try { 
+                        if (Array.isArray(rawVal)) groups = rawVal;
+                        else if (typeof rawVal === 'string' && rawVal.startsWith('[')) groups = JSON.parse(rawVal);
+                        else if (rawVal) groups = [rawVal];
+                    } catch(e) {}
+                    
+                    if (groups.length === 0) groups = ['No Group'];
+                    groups.forEach(g => { counts[g] = (counts[g] || 0) + 1; });
+                    return; 
+                }
+
+                if (field === 'PhotoRelease') {
+                    rawVal = (rawVal === true || rawVal === "Yes" || rawVal === "true") ? "Signed" : "Pending";
+                }
+
+                const label = rawVal || 'Unset';
+                counts[label] = (counts[label] || 0) + 1;
+            });
+
+            const sorted = Object.entries(counts).sort((a,b) => b[1] - a[1]); 
+            const max = sorted.length > 0 ? sorted[0][1] : 1;
+
+            if (sorted.length === 0) {
+                censusCont.innerHTML = '<div style="color:#94a3b8; font-size:11px; text-align:center; padding:10px;">No data available.</div>';
+                return;
+            }
+
+            censusCont.innerHTML = sorted.map(([label, count]) => {
+                const pct = (count / max) * 100;
+                let color = window.PeopleModule ? window.PeopleModule.getSmartColor(label) : '#6366f1';
+                if (label === 'Unset' || label === 'Pending' || label === 'No Group') color = '#cbd5e1';
+
+                return `
+                    <div class="bar-row" style="margin-bottom: 12px;">
+                        <div style="display:flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; font-weight: 600;">
+                            <span style="color:var(--ezd-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;" title="${label}">${label}</span>
+                            <span style="color:#64748b;">${count}</span>
+                        </div>
+                        <div class="bar-track" style="background:#f1f5f9; height:6px; border-radius:3px; overflow:hidden;">
+                            <div class="bar-fill" style="width:${pct}%; background:${color}; height:100%; transition: width 0.5s ease;"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        },
+    };
+
+    setTimeout(() => window.StatsModule.init(), 1000);
+    setTimeout(function() { if(window.PeopleModule) window.PeopleModule.init(); }, 100);
+})();
+</script>
