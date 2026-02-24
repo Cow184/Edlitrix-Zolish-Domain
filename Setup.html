@@ -1,0 +1,97 @@
+<div id="setup-module-root" style="padding: 20px;">
+    <h2 style="color: #8B0000; margin-top: 0;">🚀 System Initialization</h2>
+    <p style="color: #64748b; font-size: 14px;">It looks like your database isn't ready. Let's build the sheets and configure your project.</p>
+
+    <div class="setup-grid" style="display: grid; gap: 15px; margin-top: 25px;">
+        <div>
+            <div id="setup_prod_title" data-ezd-type="input" data-label="Production Title" data-placeholder="e.g. Mean Girls Musical" data-format="text"></div>
+        </div>
+
+        <div>
+            <div id="setup_org_name" data-ezd-type="input" data-label="Organization Name" data-placeholder="e.g. Fenton High Drama" data-format="text"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div id="setup_year" data-ezd-type="input" data-label="Academic Year" data-placeholder="e.g. 2025-2026" data-format="year"></div>
+            <div id="setup_org_type" 
+                 data-ezd-type="select" 
+                 data-label="Organization Type" 
+                 data-ezd-options='["Middle School", "High School", "Community Theatre", "Professional", "University"]'>
+            </div>
+        </div>
+    </div>
+
+    <button id="btn_run_setup" onclick="SetupModule.run()" class="ezd-btn dirty" style="margin-top: 30px; width: 100%; justify-content: center; height: 50px;">
+        Initialize System
+    </button>
+
+    <div id="setup_status" style="margin-top: 15px; font-size: 12px; text-align: center; color: #64748b; min-height: 20px;"></div>
+</div>
+
+<script>
+(function() {
+    window.startSetupModule = function() {
+        const root = document.getElementById('setup-module-root');
+        console.log("🛠️ Setup: Checking for Library...", !!window.EZD_UI);
+        
+        if(window.EZD_UI && root) {
+            EZD_UI.init(root);
+        } else {
+            // If library isn't ready yet, wait a moment
+            setTimeout(window.startSetupModule, 100);
+        }
+    };
+
+window.SetupModule = {
+        run: function() {
+            const btn = document.getElementById('btn_run_setup');
+            const status = document.getElementById('setup_status');
+            
+            // 1. Collect values using the Library API (which now finds the inputs correctly)
+            const data = {
+                productionTitle: EZD_UI.getComponentValue('setup_prod_title'),
+                organizationName: EZD_UI.getComponentValue('setup_org_name'),
+                academicYear: (EZD_UI.getComponentValue('setup_year') || "").split(' ')[0],
+                organizationType: EZD_UI.getComponentValue('setup_org_type'),
+                adminName: "System Admin"
+            };
+
+            console.log("🚀 Final Setup Payload:", data);
+
+            // 2. STRICTOR VALIDATION
+            const isMissing = !data.productionTitle || !data.organizationName || !data.academicYear || !data.organizationType;
+            
+            if(isMissing) {
+                status.style.color = "#ef4444";
+                status.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please fill in all fields before initializing.';
+                btn.classList.add('error');
+                setTimeout(() => btn.classList.remove('error'), 500);
+                return;
+            }
+
+            // 3. UI FEEDBACK
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing...';
+
+            // 4. SERVER CALL
+            google.script.run
+                .withSuccessHandler(res => {
+                    if(res.success) {
+                        status.style.color = "#10b981";
+                        status.innerHTML = "Success! Building Sheets...";
+                        setTimeout(() => window.location.reload(), 1500);
+                    } else {
+                        status.style.color = "#ef4444";
+                        status.innerText = "Error: " + res.message;
+                        btn.disabled = false;
+                        btn.innerHTML = 'Try Again';
+                    }
+                })
+                .runSetup(data);
+        }
+    };
+
+    window.addEventListener('fdsLibraryReady', window.startSetupModule);
+    if (window.EZD_UI_READY) window.startSetupModule();
+})();
+</script>
