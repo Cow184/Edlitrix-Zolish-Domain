@@ -1,0 +1,750 @@
+<style>
+    /* =========================================
+       UI VIEWER STYLES
+       ========================================= */
+    .ui-container { max-width: 1200px; margin: 0 auto; padding-bottom: 100px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    
+    .ui-section { 
+        background: white; 
+        border: 1px solid #e2e8f0; 
+        border-radius: 12px; 
+        padding: 25px; 
+        margin-bottom: 25px; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    
+    .ui-section h3 { 
+    margin: 0 0 20px 0; 
+    font-size: 14px; 
+    color: var(--ezd-primary-text) !important;
+    border-bottom: 1px solid var(--ezd-border);
+        padding-bottom: 10px; 
+        text-transform: uppercase; 
+        letter-spacing: 1px;
+        display: flex; align-items: center; gap: 10px;
+    }
+
+    /* Responsive Grids */
+    .ui-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .ui-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .ui-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+
+    /* Console & Controls */
+    #ui-console { 
+        background: #0f172a; color: #10b981; 
+        font-family: 'Courier New', monospace; font-size: 12px; 
+        padding: 15px; border-radius: 8px; 
+        height: 150px; overflow-y: auto; 
+        border: 1px solid #334155;
+    }
+    
+    .ui-header {
+        position: sticky; top: 0; z-index: 100;
+        background: rgba(255,255,255,0.95); backdrop-filter: blur(5px);
+        margin-bottom: 25px; padding: 20px; 
+        border-bottom: 1px solid #e2e8f0;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    /* TOOLTIP SYSTEM */
+.ezd-help-icon {
+    display: inline-block; margin-left: 6px; color: #94a3b8; cursor: help; font-size: 11px;
+    position: relative;
+}
+.ezd-help-icon:hover { color: var(--ezd-primary); }
+/* Simple browser tooltip is used via 'title' attribute for zero-overhead */
+</style>
+
+<div class="ui-container">
+    
+    <div class="ui-header">
+        <div>
+            <h1 style="color:#1e293b; margin:0; font-size:24px;">Full Component Library</h1>
+            <p style="color:#64748b; margin:5px 0 0 0;">Visualizing all data types</p>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="ezd-save-btn dirty" onclick="UIViewer.testAutoFill()">
+                <i class="fas fa-bolt"></i> Auto-Fill
+            </button>
+            
+            <button class="ezd-save-btn idle" onclick="EZD_UI.setRole('admin')">
+                <i class="fas fa-user-shield"></i> Admin
+            </button>
+            
+            <button class="ezd-save-btn idle" onclick="EZD_UI.setRole('viewer')">
+                <i class="fas fa-eye"></i> Volunteer
+            </button>
+
+            <button class="ezd-save-btn idle" onclick="UIViewer.toggleDark()">
+                <i class="fas fa-moon"></i> Theme
+            </button>
+
+            <button class="ezd-save-btn idle" onclick="UIViewer.toggleMute(this)">
+                <i class="fas fa-volume-up"></i> Sound
+            </button>
+
+            <button class="ezd-save-btn idle" onclick="UIViewer.clearConsole()">
+                <i class="fas fa-eraser"></i> Clear
+            </button>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-pen"></i> Basic Text Inputs</h3>
+        <div class="ui-grid-2">
+            <div data-ezd-type="input" id="basic-text" data-type="text" data-label="Standard Text" data-placeholder="Type here..."></div>
+            <div data-ezd-type="input" id="basic-area" data-type="textarea" data-label="Multiline Textarea"></div>
+            <div data-ezd-type="input" id="basic-pass" data-type="password" data-label="Password (Visibility Toggle)"></div>
+            <div data-ezd-type="input" id="basic-srch" data-type="search" data-label="Search Field"></div>
+        </div>
+        <div class="controls">
+    <div data-ezd-type="notification-tester"></div> 
+</div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-address-book"></i> Contact Information</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="input" id="contact-email" data-type="email" data-label="Email Address"></div>
+            <div data-ezd-type="phone" id="contact-phone" data-label="Phone (Split)"></div>
+            <div data-ezd-type="input" id="contact-mobile" data-type="mobile" data-label="Mobile Number" data-icon="fa-mobile-alt"></div>
+            <div data-ezd-type="input" id="contact-fax" data-type="fax" data-label="Fax Machine" data-icon="fa-fax"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+                <div class="ui-header">
+                    <div class="ui-title">23. Haptic Buttons</div>
+                    <div class="ui-desc">Physics-based buttons with sound, ripple effects, and dip animations.</div>
+                </div>
+                <div class="ui-grid-3">
+                    
+                    <div data-ezd-type="button" 
+                         data-label="Primary Action" 
+                         onclick="EZD_UI.notify('success', 'Primary Clicked', 'Standard submit action triggered.')">
+                    </div>
+
+                    <div data-ezd-type="button" 
+                         data-label="Secondary Action" 
+                         data-variant="secondary"
+                         onclick="EZD_UI.notify('info', 'Secondary Clicked', 'Cancel or alternative action triggered.')">
+                    </div>
+
+                    <button class="ezd-btn" onclick="EZD_UI.notify('warning', 'Icon Clicked', 'Buttons can hold icons too.')">
+                        <i class="fas fa-bolt"></i> Power Up
+                    </button>
+
+                </div>
+            </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-map-marked-alt"></i> Location & Geography</h3>
+        <div class="ui-grid-3">
+            <div data-ezd-type="input" id="loc-search" data-context="location" data-label="Smart Address Search (Auto-Fills below)" data-placeholder="Type 'New York'..."></div>
+            <div data-ezd-type="input" id="loc-gps" data-type="gps" data-label="GPS Coordinates" data-icon="fa-satellite"></div>
+            <div data-ezd-type="input" id="loc-addr" data-type="address" data-label="Street Address"></div>
+        </div>
+        <div class="ui-grid-4" style="margin-top:15px;">
+            <div data-ezd-type="input" id="loc-city" data-type="city" data-label="City"></div>
+            <div data-ezd-type="input" id="loc-state" data-type="state" data-label="State/Province"></div>
+            <div data-ezd-type="input" id="loc-zip" data-type="zip" data-label="ZIP/Postal Code"></div>
+            <div data-ezd-type="input" id="loc-country" data-type="country" data-label="Country"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-calendar-alt"></i> Time & Date</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="input" id="time-date" data-type="date" data-label="Date" data-placeholder="YYYY-MM-DD"></div>
+            <div data-ezd-type="input" id="time-clock" data-type="time" data-label="Time" data-placeholder="HH:MM"></div>
+            <div data-ezd-type="input" id="time-full" data-type="datetime" data-label="DateTime"></div>
+            <div data-ezd-type="input" id="time-week" data-type="week" data-label="Week Number"></div>
+        </div>
+        <div class="ui-grid-2" style="margin-top:15px;">
+            <div data-ezd-type="input" id="time-month" data-type="month" data-label="Month View"></div>
+            <div data-ezd-type="input" id="time-range" data-type="daterange" data-label="Date Range (Start - End)" data-icon="fa-arrows-alt-h"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-dice"></i> Casino Grade Pickers</h3>
+        <div class="ui-grid-2">
+            <div data-ezd-type="drum-date" id="drum-date-picker" data-label="Birth Date"></div>
+            
+            <div data-ezd-type="drum-date-range" id="drum-range-picker" data-label="Trip Dates"></div>
+
+            <div data-ezd-type="drum-time-range" id="drum-time-range" data-label="Shift Hours"></div>
+            
+            <div data-ezd-type="drum-time" id="drum-time-picker" data-label="Appointment Time"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-ruler-combined"></i> Measurements & Sizing</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="unit-input" id="meas-height" data-unit-type="height" data-label="Height"></div>
+            <div data-ezd-type="unit-input" id="meas-weight" data-unit-type="weight" data-label="Weight"></div>
+            <div data-ezd-type="unit-input" id="meas-temp" data-unit-type="temp" data-label="Temperature"></div>
+            <div data-ezd-type="unit-input" id="meas-dist" data-unit-type="distance" data-label="Distance"></div>
+        </div>
+        <div class="ui-grid-4" style="margin-top:15px;">
+            <div data-ezd-type="input" id="meas-pants" data-type="text" data-label="Pants Size" data-icon="fa-columns" data-placeholder="30x32"></div>
+            <div data-ezd-type="input" id="meas-shirt" data-type="text" data-label="Shirt Size" data-icon="fa-tshirt" data-placeholder="L / XL"></div>
+            <div data-ezd-type="input" id="meas-shoe" data-type="text" data-label="Shoe Size" data-icon="fa-shoe-prints"></div>
+            <div data-ezd-type="input" id="meas-dim" data-type="text" data-label="Dimensions (LxWxH)" data-icon="fa-cube"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-coins"></i> Financial</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="input" id="fin-curr" data-type="currency" data-label="Currency (ATM)" data-placeholder="$0.00"></div>
+            <div data-ezd-type="input" id="fin-card" data-type="credit-card" data-label="Credit Card Number"></div>
+            <div data-ezd-type="input" id="fin-cvv" data-type="cvv" data-label="CVV / CVC"></div>
+            <div data-ezd-type="input" id="fin-exp" data-type="text" data-label="Expiry Date" data-mask="##/##" data-placeholder="MM/YY" data-icon="fa-calendar-times"></div>
+        </div>
+        <div class="ui-grid-3" style="margin-top:15px;">
+            <div data-ezd-type="input" id="fin-bank" data-type="bank" data-label="Bank Account Number"></div>
+            <div data-ezd-type="input" id="fin-route" data-type="routing" data-label="Routing Number"></div>
+            <div data-ezd-type="input" id="fin-tax" data-type="tax" data-label="Tax ID / TIN"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-passport"></i> Documents & ID</h3>
+        <div class="ui-grid-3">
+            <div data-ezd-type="input" id="doc-pass" data-type="passport" data-label="Passport Number"></div>
+            <div data-ezd-type="input" id="doc-driver" data-type="license" data-label="Driver's License"></div>
+            <div data-ezd-type="input" id="doc-plate" data-type="plate" data-label="License Plate"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-wifi"></i> Internet & Technology</h3>
+        <div class="ui-grid-3">
+            <div data-ezd-type="input" id="tech-url" data-type="url" data-label="URL (External Link)"></div>
+            <div data-ezd-type="input" id="tech-ip" data-type="ip" data-label="IP Address"></div>
+            <div data-ezd-type="input" id="tech-mac" data-type="mac" data-label="MAC Address"></div>
+        </div>
+        <div class="ui-grid-3" style="margin-top:15px;">
+            <div data-ezd-type="input" id="tech-hex" data-type="color" data-label="Hex Color" data-placeholder="#RRGGBB"></div>
+            <div data-ezd-type="input" id="tech-user" data-type="username" data-label="Username"></div>
+            <div data-ezd-type="input" id="tech-slug" data-type="text" data-label="URL Slug / Path" data-icon="fa-slash"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-briefcase"></i> Business & Professional</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="input" id="biz-sku" data-type="sku" data-label="SKU / UPC Code"></div>
+            <div data-ezd-type="input" id="biz-order" data-type="order" data-label="Order Number"></div>
+            <div data-ezd-type="input" id="biz-inv" data-type="invoice" data-label="Invoice Number"></div>
+            <div data-ezd-type="input" id="biz-po" data-type="text" data-label="PO Number" data-icon="fa-file-contract"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-atom"></i> Academic & Scientific</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="input" id="sci-isbn" data-type="isbn" data-label="ISBN (Book)"></div>
+            <div data-ezd-type="input" id="sci-doi" data-type="text" data-label="DOI Reference" data-icon="fa-microscope"></div>
+            <div data-ezd-type="input" id="sci-chem" data-type="formula" data-label="Chemical Formula"></div>
+            <div data-ezd-type="input" id="sci-math" data-type="math" data-label="Math Expression"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-user-md"></i> Medical</h3>
+        <div class="ui-grid-3">
+            <div data-ezd-type="input" id="med-blood" data-type="blood" data-label="Blood Type" data-placeholder="O+"></div>
+            <div data-ezd-type="input" id="med-allergy" data-type="text" data-label="Allergies" data-icon="fa-exclamation-triangle"></div>
+            <div data-ezd-type="input" id="med-rx" data-type="pill" data-label="Prescription / Rx"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-fingerprint"></i> Specialized Formats</h3>
+        <div class="ui-grid-4">
+            <div data-ezd-type="input" id="spec-ssn" data-type="ssn" data-label="Social Security (SSN)"></div>
+            <div data-ezd-type="input" id="spec-vin" data-type="vin" data-label="Vehicle VIN"></div>
+            <div data-ezd-type="input" id="spec-track" data-type="text" data-label="Tracking Number" data-icon="fa-shipping-fast"></div>
+            <div data-ezd-type="input" id="spec-bar" data-type="barcode" data-label="Barcode / Serial"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-sliders-h"></i> Interactive Controls</h3>
+        <div class="ui-grid-3">
+            <div data-ezd-type="slider" id="demo-slider" data-label="Opacity" data-min="0" data-max="100" data-value="80" data-unit="%"></div>
+            <div data-ezd-type="slider" id="demo-range" data-label="Price Range" data-range="true" data-min="0" data-max="1000" data-step="50" data-value="200,800" data-unit="$"></div>
+            <div data-ezd-type="color-picker" id="demo-color" data-label="Theme Color" data-value="#10B981"></div>
+        </div>
+        <div style="margin-top:20px;">
+            <div data-ezd-type="segmented" id="demo-seg" data-label="View Mode" data-options='["List", "Grid", "Map"]' data-value="Grid"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-mouse-pointer"></i> Selectors</h3>
+        <div class="ui-grid-2">
+            <div data-ezd-type="select" id="demo-select" data-label="Department" data-ezd-options='["Sales", "Engineering", "HR", "Marketing"]'></div>
+            <div data-ezd-type="multiselect" id="demo-multi" data-label="Assign Tags" data-ezd-options='["Urgent", "Review", "Approved", "Pending"]'></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+                <div class="ui-section-header">
+                    <div class="ui-icon-box"><i class="fas fa-layer-group"></i></div>
+                    <h3>Overflow Test</h3>
+                </div>
+                
+                <div id="multi-test" 
+                     data-ezd-type="multiselect" 
+                     data-label="Select Many Items" 
+                     data-ezd-options='["Apple", "Banana", "Cherry", "Dragonfruit", "Elderberry", "Fig", "Grape", "Honeydew", "Indian Fig", "Jackfruit", "Kiwi", "Lemon", "Mango", "Nectarine", "Orange", "Papaya", "Quince", "Raspberry", "Strawberry", "Tangerine", "Ugli Fruit", "Vanilla Bean", "Watermelon", "Xigua", "Yuzu", "Zucchini"]'>
+                </div>
+            </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-folder"></i> Tabs & Actions</h3>
+        <div data-ezd-type="tabs" id="demo-tabs" style="margin-bottom:20px;">
+            <div data-tab="General" data-icon="fa-info-circle"><div style="padding:15px; color:#64748b;">General settings content area.</div></div>
+            <div data-tab="Privacy" data-icon="fa-lock"><div style="padding:15px; color:#64748b;">Privacy controls content area.</div></div>
+            <div data-tab="Notifications" data-badge="5"><div style="padding:15px; color:#64748b;">You have 5 unread notifications.</div></div>
+        </div>
+        <div class="ui-grid-3">
+            <div data-ezd-type="save-button" id="demo-save" data-label="Save Changes" onclick="UIViewer.saveForm()"></div>
+            <div data-ezd-type="search" id="demo-search" data-placeholder="Global Search..."></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-check-square"></i> Toggles & Uploads</h3>
+        <div class="ui-grid-3">
+            <div data-ezd-type="toggle" id="demo-toggle-1" data-label="Enable Notifications"></div>
+            <div data-ezd-type="toggle" id="demo-toggle-2" data-label="Two-Factor Auth (2FA)"></div>
+            <div data-ezd-type="file-upload" id="demo-file" data-label="Profile Picture" data-max-kb="200"></div>
+
+<div data-ezd-type="file-upload" id="hq-file" data-label="High Res Scan" data-max-kb="1000"></div>
+        </div>
+    </div>
+
+    <div data-ezd-type="accordion" data-label="Advanced Settings (Click to Expand)">
+        <div class="ui-grid-2">
+            <div data-ezd-type="input" id="adv-key" data-label="API Key" data-help="Found in Settings"></div>
+            <div data-ezd-type="toggle" id="adv-debug" data-label="Debug Mode"></div>
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-list-ul"></i> Multi-Column Smart Lists</h3>
+        <div class="ui-grid-2">
+            
+            <div data-ezd-type="list" id="simple-list" 
+                 data-label="Shopping List"
+                 data-placeholder="Add item..."
+                 data-columns="Item Name">
+            </div>
+            
+            <div data-ezd-type="list" id="complex-list"
+                 data-label="Sensor Data"
+                 data-columns="Variable Name, Device ID, GPS Coordinates">
+            </div>
+
+        </div>
+    </div>
+
+    <div class="ui-section">
+        <h3><i class="fas fa-table"></i> Wide Project Tracker (Full Width)</h3>
+        <div data-ezd-type="list" id="wide-project-list" 
+             data-label="Q3 Roadmap"
+             data-columns="Task Name, Assignee, Priority, Due Date, Status">
+        </div>
+    </div>
+
+    <div class="ui-section" style="background:#1e293b; border:none; margin-top:40px;">
+        <h3 style="color:#fff; border-color:#334155;">Event Log</h3>
+        <div id="ui-console">Ready.</div>
+    </div>
+
+</div>
+
+<script>
+(function() {
+    window.UIViewer = {
+      // Add this function inside window.UIViewer
+        toggleMute: function(btn) {
+            var isEnabled = EZD_UI.toggleSound();
+            if (isEnabled) {
+                btn.innerHTML = '<i class="fas fa-volume-up"></i> Sound';
+                btn.classList.remove('dirty'); // Grey
+            } else {
+                btn.innerHTML = '<i class="fas fa-volume-mute"></i> Muted';
+                btn.classList.add('dirty'); // Red (or Brand Color) to show state
+            }
+        },
+        init: function() {
+            if (window.EZD_UI && EZD_UI.init) {
+                console.log("🚀 Starting Viewer...");
+                // ... inside UIViewer.init ...
+                setTimeout(function() {
+                    var container = document.querySelector('.ui-container');
+                    EZD_UI.init(container);
+                    UIViewer.attachListeners();
+                    UIViewer.log("✅ System Ready: All 50+ Types Loaded.");
+
+                    // --- NEW: SERVER-SIDE CHECK NOTIFICATION ---
+                    // Check the global variable we injected in index.html
+                    if (window.FDS_STARTUP_LOGS && window.FDS_STARTUP_LOGS.length > 0) {
+                        
+                        console.warn("⚙️ Server Repair Log:", window.FDS_STARTUP_LOGS);
+                        
+                        if (window.EZD_UI && EZD_UI.notify) {
+                            EZD_UI.notify({
+                                type: 'info',
+                                icon: 'fa-toolbox',
+                                title: 'System Initialized',
+                                // Join the logs: "Root Folder, Backups Folder"
+                                message: 'Created missing resources: ' + window.FDS_STARTUP_LOGS.join(', '), 
+                                duration: 6000 // Show longer so they see why it took time
+                            });
+                        }
+                        
+                        UIViewer.log("🛠️ Backend Repaired: " + window.FDS_STARTUP_LOGS.join(', '));
+                    }
+                    // -------------------------------------------
+                    
+                }, 100);
+            } else {
+                console.error("EZD_UI not found");
+            }
+        },
+
+        // --- DARK MODE TOGGLE ---
+        toggleDark: function() {
+            this.isDark = !this.isDark; // Toggle state
+            
+            // 1. Call Library Logic
+            EZD_UI.toggleDarkMode(this.isDark);
+            
+            // 2. Update Viewer-Specific Containers (Since they aren't in the library)
+            document.querySelectorAll('.ui-section').forEach(el => {
+                el.style.backgroundColor = this.isDark ? '#1e293b' : '#ffffff';
+                el.style.borderColor = this.isDark ? '#334155' : '#e2e8f0';
+            });
+            
+            // 3. Update Header
+            const header = document.querySelector('.ui-header');
+            const title = document.querySelector('h1');
+            if(header) header.style.backgroundColor = this.isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)';
+            if(title) title.style.color = this.isDark ? '#fff' : '#1e293b';
+            
+            this.log(this.isDark ? "🌑 Dark Mode Active" : "☀️ Light Mode Active");
+        },
+
+        attachListeners: function() {
+            // 1. Existing Logger (SAFE VERSION)
+            document.querySelectorAll('.ezd-smart-input, .ezd-store').forEach(function(el) {
+                el.addEventListener('change', function(e) {
+                    // Safety check: Ensure parent exists before reading ID
+                    var parent = e.target.closest('[data-ezd-type]');
+                    var id = e.target.id || (parent ? parent.id : 'unknown');
+                    var val = e.target.value;
+                    UIViewer.log("Change [" + id + "]: " + val);
+                });
+            });
+
+            // 2. NEW: Live Theme Switcher (Add this block)
+            var colorPicker = document.getElementById('demo-color');
+            if (colorPicker) {
+                colorPicker.addEventListener('change', function(e) {
+                    // This applies the color immediately when you pick it
+                    EZD_UI.setTheme(e.target.value);
+                    UIViewer.log("🎨 Theme Updated to " + e.target.value);
+                });
+            }
+        },
+
+        saveForm: function() {
+            var btnId = 'demo-save';
+            EZD_UI.setButtonState(btnId, 'saving');
+            this.log("💾 Saving Form Data...");
+
+            // 1. Gather all data (simulate a form submit)
+            var payload = {};
+            document.querySelectorAll('.ezd-store').forEach(el => {
+                payload[el.id] = el.value;
+            });
+            console.log("Form Payload:", payload);
+
+            // 2. Handle File Upload (Async)
+            // We pass the ID of the file input component
+            EZD_UI.uploadData('demo-file')
+                .then(function(result) {
+                    EZD_UI.setButtonState(btnId, 'success');
+                    if(result) UIViewer.log("☁️ File Uploaded: " + result.url);
+                    else UIViewer.log("✅ Data Saved (No file)");
+                })
+                .catch(function(err) {
+                    EZD_UI.setButtonState(btnId, 'idle'); // Reset on error
+                    UIViewer.log("❌ Error: " + err);
+                });
+        },
+
+        // --- THE MEGA AUTO-FILLER (Fixed) ---
+        testAutoFill: function() {
+            this.log("✨ POPULATING EVERY FIELD...");
+            
+            // --- FREEZE TEST ---
+            var passField = document.getElementById('basic-pass');
+            if(passField) passField.disabled = true;
+
+            // 1. Basic Inputs
+            EZD_UI.setValue('basic-text', 'System Operational');
+            EZD_UI.setValue('basic-area', 'Diagnostic Report:\n- All systems go\n- Latency: 12ms\n- Status: Green');
+            EZD_UI.setValue('basic-srch', 'User: Admin_01');
+            
+            // 2. Contact Info
+            EZD_UI.setValue('contact-email', 'admin@futuredata.com'); 
+            EZD_UI.setValue('contact-phone', '5550192834');
+            EZD_UI.setValue('contact-mobile', '+1 (555) 987-6543');
+            EZD_UI.setValue('contact-fax', '+1-202-555-0102');
+            
+            // 3. Location
+            EZD_UI.setValue('loc-gps', '37.7749, -122.4194');
+            EZD_UI.setValue('loc-addr', '1 Infinite Loop');
+            EZD_UI.setValue('loc-city', 'Cupertino');
+            EZD_UI.setValue('loc-state', 'California');
+            EZD_UI.setValue('loc-zip', '95014');
+            EZD_UI.setValue('loc-country', 'USA');
+            
+            // 4. Time
+            EZD_UI.setValue('time-clock', '08:42'); 
+            EZD_UI.setValue('drum-time-range', '09:00,17:30');
+            EZD_UI.setValue('drum-date-picker', '1995-05-15'); 
+            EZD_UI.setValue('drum-range-picker', '2025-10-21,2025-10-25');
+            EZD_UI.setValue('drum-time-picker', '14:30', '24h');
+            EZD_UI.setValue('time-full', '2025-10-21T08:42');
+            EZD_UI.setValue('time-week', '2025-W42');
+            EZD_UI.setValue('time-month', '2025-10');
+            EZD_UI.setValue('time-range', '2025/01/01 - 2025/12/31');
+            
+            // 5. Measurements
+            EZD_UI.setValue('meas-height', '6\' 1"');
+            EZD_UI.setValue('meas-weight', '180');
+            EZD_UI.setValue('meas-temp', '98.6');
+            EZD_UI.setValue('meas-dist', '26.2');
+            EZD_UI.setValue('meas-pants', '32x34');
+            EZD_UI.setValue('meas-shirt', 'Large');
+            EZD_UI.setValue('meas-shoe', '10.5 US');
+            EZD_UI.setValue('meas-dim', '10x10x20');
+            
+            // 6. Financial
+            EZD_UI.setValue('fin-curr', '250000'); 
+            EZD_UI.setValue('fin-card', '4532 0159 8745 2365');
+            EZD_UI.setValue('fin-cvv', '884');
+            EZD_UI.setValue('fin-exp', '12/28');
+            EZD_UI.setValue('fin-bank', '9876543210');
+            EZD_UI.setValue('fin-route', '123456789');
+            EZD_UI.setValue('fin-tax', '12-3456789');
+            
+            // 7. Docs
+            EZD_UI.setValue('doc-pass', 'A12345678');
+            EZD_UI.setValue('doc-driver', 'D987654321');
+            EZD_UI.setValue('doc-plate', 'ABC-1234');
+            
+            // 8. Tech
+            EZD_UI.setValue('tech-url', 'github.com/ui-library');
+            EZD_UI.setValue('tech-ip', '192.168.1.1');
+            EZD_UI.setValue('tech-mac', '00:1A:2B:3C:4D:5E');
+            EZD_UI.setValue('tech-hex', '#3B82F6');
+            EZD_UI.setValue('tech-user', 'dev_master');
+            EZD_UI.setValue('tech-slug', '/docs/v2/components');
+            
+            // 9. Biz/Sci/Med/Spec (Abbreviated for brevity, assuming standard inputs work)
+            EZD_UI.setValue('biz-sku', 'PROD-X99');
+            
+            // 13. Interactive
+            EZD_UI.setValue('demo-slider', 75);
+            EZD_UI.setValue('demo-range', '300,700');
+            EZD_UI.setValue('demo-color', '#8B0000');
+            EZD_UI.setValue('demo-seg', 'Map');
+            
+            // 14. Selectors
+            EZD_UI.setValue('demo-select', 'Engineering');
+            EZD_UI.setValue('demo-multi', ['Urgent', 'Review']); 
+            
+            // 15. Tabs/Actions
+            EZD_UI.setValue('demo-tabs', 1);
+            EZD_UI.setButtonState('demo-save', 'success');
+            EZD_UI.setValue('demo-search', 'Query: Active Users');
+
+            // --- 16. LISTS (THE FIX) ---
+            
+            // Fix 1: Simple List (Maps array of strings to objects)
+            // Note: The UI Library fallback handles simple strings, but let's be explicit
+            EZD_UI.setValue('simple-list', JSON.stringify(["Milk", "Eggs", "Coffee", "Bread"]));
+            
+            // Fix 2: Complex List (Keys must match data-columns EXACTLY)
+            // HTML: data-columns="Variable Name, Device ID, GPS Coordinates"
+            EZD_UI.setValue('complex-list', JSON.stringify([
+                { "Variable Name": "Pressure", "Device ID": "PSI-01", "GPS Coordinates": "34.05, -118.24" },
+                { "Variable Name": "Flow Rate", "Device ID": "FLO-22", "GPS Coordinates": "34.06, -118.25" }
+            ]));
+
+            // Fix 3: Wide List
+            EZD_UI.setValue('wide-project-list', JSON.stringify([
+                { "Task Name": "Backend Auth", "Assignee": "Sarah", "Priority": "High", "Due Date": "2024-05-01", "Status": "In Review" },
+                { "Task Name": "Frontend Dashboard", "Assignee": "Mike", "Priority": "Medium", "Due Date": "2024-05-10", "Status": "In Progress" },
+                { "Task Name": "Database Opt", "Assignee": "Jenkins", "Priority": "Low", "Due Date": "2024-06-15", "Status": "Planned" }
+            ]));
+
+            // 17. Toggles/Files
+            EZD_UI.setValue('demo-toggle-1', 'true');
+            EZD_UI.setValue('demo-toggle-2', false); 
+            EZD_UI.setValue('demo-file', 'avatar_hd.png'); 
+            
+            this.log("✅ Auto-Fill Complete.");
+        },
+
+        // --- THE FREEZE RAY (Updated for Complex Components) ---
+        toggleFreeze: function() {
+            var inputs = document.querySelectorAll('input, select, textarea, button.ezd-save-btn');
+            var containers = document.querySelectorAll('.ezd-slider-container, .ezd-seg-container'); // Capture wrappers
+            
+            var isFrozen = false;
+
+            // 1. Freeze Standard Inputs
+            inputs.forEach(function(el) {
+                if(el.innerText && el.innerText.includes('Freeze')) return;
+                el.disabled = !el.disabled;
+                isFrozen = el.disabled;
+            });
+
+            // 2. Freeze Complex Wrappers (Sliders/Segmented)
+            containers.forEach(function(el) {
+                if (isFrozen) el.classList.add('disabled');
+                else el.classList.remove('disabled');
+            });
+
+            // 3. Log it
+            if(isFrozen) {
+                this.log("❄️ UI FROZEN (Disabled State Active)");
+                document.body.style.cursor = "not-allowed";
+            } else {
+                this.log("🔥 UI THAWED (Active State)");
+                document.body.style.cursor = "default";
+            }
+        },
+
+        log: function(msg) {
+            var consoleEl = document.getElementById('ui-console'); // FIXED ID
+            if(consoleEl) {
+                var line = document.createElement('div');
+                line.innerText = "> " + msg;
+                consoleEl.prepend(line); 
+                if(consoleEl.children.length > 50) consoleEl.lastChild.remove(); 
+            }
+        }, // <--- ADDED COMMA HERE (Crucial!)
+
+        clearConsole: function() {
+            document.getElementById('ui-console').innerHTML = 'Console cleared.';
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { UIViewer.init(); });
+    } else {
+        UIViewer.init();
+    }
+})();
+// Replace the bottom registration code with this:
+if (window.EZD_UI && EZD_UI.register) {
+    EZD_UI.register('signature', function(el) {
+        el.innerHTML = '<div style="border:1px solid #ccc; padding:20px; color:#cbd5e1; text-align:center;">Signature Pad Plugin</div>';
+    });
+}
+// ==================================================
+        // THE MODULE (The "Soul" of the App)
+        // ==================================================
+        
+        // 1. GLOBAL CONFIG (This makes the Library's "Test Module" button work)
+        window.FDS_MODULE_DATA = {
+            modalScenarios: [
+                { type: 'info', title: 'System Upgrade', message: 'Patch v5.0 is ready.', confirmText: 'Install', hasCancel: true },
+                { type: 'warning', title: 'Nuclear Launch', message: 'Authorized by admin. Turn key.', confirmText: 'Turn Key', hasCancel: true },
+                { type: 'danger', title: 'Erase Existence', message: 'Delete digital footprint?', confirmText: 'Do it.', hasCancel: true }
+            ]
+        };
+
+        // 2. LOCAL SCENARIOS (For specific Viewer buttons)
+        const APP_SCENARIOS = {
+            update: window.FDS_MODULE_DATA.modalScenarios[0],
+            nuke:   window.FDS_MODULE_DATA.modalScenarios[1],
+            pizza: { 
+                type: 'success', title: 'Pizza Time', 
+                message: 'You have won a lifetime supply of digital pizza.', 
+                confirmText: 'Eat It', hasCancel: false 
+            }
+        };
+
+        // 3. Initialize App Logic
+        document.addEventListener('fdsLibraryReady', () => {
+            
+            // A. Wire up the Theme Switch
+            const themeToggle = document.getElementById('theme-switch');
+            if(themeToggle) {
+                themeToggle.addEventListener('change', (e) => {
+                    const isDark = e.target.value === 'true';
+                    window.EZD_UI.toggleDarkMode(isDark);
+                    document.body.style.background = isDark ? '#0f172a' : '#f8fafc';
+                    document.body.style.color = isDark ? '#f1f5f9' : '#334155';
+                });
+            }
+
+            // B. Wire up the Module Buttons (Async/Await)
+            
+            // Update Button
+            const btnUpdate = document.getElementById('btn-update');
+            if(btnUpdate) {
+                btnUpdate.onclick = async () => {
+                    const result = await window.EZD_UI.confirm(APP_SCENARIOS.update);
+                    if(result) window.EZD_UI.notify('success', 'Installing...', 'Please do not turn off your brain.');
+                };
+            }
+
+            // Nuke Button
+            const btnNuke = document.getElementById('btn-nuke');
+            if(btnNuke) {
+                btnNuke.onclick = async () => {
+                    // First Confirmation
+                    if (await window.EZD_UI.confirm(APP_SCENARIOS.nuke)) {
+                        // Double Confirmation (Chained Modals!)
+                        const really = await window.EZD_UI.confirm({
+                            type: 'danger', title: 'FINAL WARNING', 
+                            message: 'This is not a drill. Are you absolutely sure?', 
+                            confirmText: 'LAUNCH'
+                        });
+                        
+                        if(really) window.EZD_UI.notify('error', 'LAUNCH DETECTED', 'Missiles represent.');
+                        else window.EZD_UI.notify('info', 'Aborted', 'Launch sequence stopped.');
+                    }
+                };
+            }
+
+            // Pizza Button
+            const btnPizza = document.getElementById('btn-pizza');
+            if(btnPizza) {
+                btnPizza.onclick = async () => {
+                    // Custom softcoded modal
+                    await window.EZD_UI.confirm(APP_SCENARIOS.pizza);
+                    window.EZD_UI.notify({
+                        color: '#eab308', icon: 'fa-pizza-slice', 
+                        title: 'Yum!', message: 'Digital calories absorbed.'
+                    });
+                };
+            }
+            
+            // Init Viewer Helpers
+            if(window.UIViewer && UIViewer.init) UIViewer.init();
+        });
+</script>
