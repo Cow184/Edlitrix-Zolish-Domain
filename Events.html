@@ -1,0 +1,567 @@
+<style>
+    .events-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .view-toggle { display: flex; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 8px; border: 1px solid var(--ezd-border); }
+    .view-btn { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: var(--text-color); opacity: 0.6; border-radius: 6px; transition: 0.2s; font-size: 13px; }
+    .view-btn:hover { opacity: 1; }
+    .view-btn.active { background: var(--bg-color); color: var(--primary-color); opacity: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    body.ezd-dark-mode .view-toggle { background: rgba(255,255,255,0.05); border-color: #334155; }
+    body.ezd-dark-mode .view-btn.active { background: #1e293b; color: var(--primary-color); }
+
+    .calendar-wrapper { background: var(--bg-color); border: 1px solid var(--ezd-border); border-radius: 12px; overflow: hidden; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+    .calendar-wrapper.active { display: block; }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--ezd-border); background: rgba(0,0,0,0.02); }
+    .cal-title { font-size: 16px; font-weight: 700; color: var(--text-color); }
+    .cal-nav-btn { background: var(--bg-color); border: 1px solid var(--ezd-border); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; color: var(--text-color); display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .cal-nav-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+    body.ezd-dark-mode .cal-nav-btn { background: #1e293b; border-color: #334155; }
+    body.ezd-dark-mode .cal-header { background: #0f172a; border-bottom-color: #334155; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); background: var(--ezd-border); gap: 1px; }
+    .cal-day-name { padding: 10px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text-light); text-transform: uppercase; background: var(--bg-color); }
+    .cal-day { min-height: 120px; background: var(--bg-color); padding: 5px; position: relative; cursor: pointer; transition: 0.1s; overflow: hidden; min-width: 0; }
+    .cal-day:hover { background: rgba(0,0,0,0.02); }
+    body.ezd-dark-mode .cal-day:hover { background: rgba(255,255,255,0.02); }
+    .cal-day.today { background: rgba(var(--primary-rgb), 0.05); } 
+    .cal-day.today::after { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background:var(--primary-color); }
+    .day-num { font-size: 12px; font-weight: 600; color: var(--text-light); margin-bottom: 5px; display: block; text-align: right; padding-right: 5px; }
+    .day-num.other-month { opacity: 0.3; }
+    .day-content { display: flex; flex-direction: column; gap: 3px; }
+
+    .evt-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; color: white; margin-right: 5px; }
+    
+    /* Smart Event Colors */
+    .evt-rehearsal { background: #3b82f6 !important; } 
+    .evt-performance { background: #ef4444 !important; } 
+    .evt-fitting { background: #10b981 !important; }    
+    .evt-work { background: #f59e0b !important; } 
+    .evt-other { background: #64748b !important; }
+    .type-Meeting { background: #64748b; } .type-Work { background: #f59e0b; } .type-Other { background: #64748b; }
+    .cal-event-bar { font-size: 10px; padding: 4px 6px; border-radius: 4px; cursor: pointer; color: white; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: block; }
+    .cal-event-bar:hover { opacity: 0.9; transform: scale(1.01); }
+
+    .list-wrapper { display: none; background: var(--bg-color); border: 1px solid var(--ezd-border); border-radius: 12px; overflow: hidden; }
+    .list-wrapper.active { display: block; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px 15px; font-size: 11px; color: var(--text-light); text-transform: uppercase; background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--ezd-border); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--ezd-border); font-size: 13px; color: var(--text-color); vertical-align: top; }
+    body.ezd-dark-mode th { background: #0f172a; }
+    .list-date { font-weight: 700; color: var(--text-color); }
+    .list-time { font-size: 11px; color: var(--text-light); }
+
+    .action-btn { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--ezd-border); background: transparent; color: var(--text-light); cursor: pointer; transition: 0.2s; margin-left: 5px; font-size: 12px; }
+    .action-btn:hover { background: rgba(0,0,0,0.05); color: var(--text-color); border-color: var(--text-light); }
+    body.ezd-dark-mode .action-btn:hover { background: rgba(255,255,255,0.1); }
+    .action-btn.primary { color: var(--primary-color); border-color: var(--primary-color); background: rgba(var(--primary-rgb), 0.1); }
+    .action-btn.primary:hover { background: var(--primary-color); color: white; }
+</style>
+
+<div id="events-module-root" onclick="if(window.EventsModule) window.EventsModule.closeContextMenu()">
+    <div class="events-header">
+        <h2 style="color:var(--primary-color); margin:0;"><i class="fas fa-calendar-alt"></i> Production Schedule</h2>
+        <div style="display:flex; gap:15px; align-items: center;">
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="window.EventsModule.switchView('calendar')"><i class="fas fa-th"></i> Calendar</button>
+                <button class="view-btn" onclick="window.EventsModule.switchView('list')"><i class="fas fa-list"></i> List</button>
+            </div>
+            <div data-ezd-type="button" data-label="Add Event" data-icon="fa-plus" onclick="_openEventModal()"></div>
+        </div>
+    </div>
+
+    <div id="view-calendar" class="calendar-wrapper active">
+        <div class="cal-header">
+            <button class="cal-nav-btn" onclick="window.EventsModule.changeMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+            <div class="cal-title" id="calMonthTitle">Loading...</div>
+            <button class="cal-nav-btn" onclick="window.EventsModule.changeMonth(1)"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        <div class="cal-grid" id="calendarGrid"></div>
+    </div>
+
+    <div id="view-list" class="list-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date / Time</th>
+                    <th>Event</th>
+                    <th>Location</th>
+                    <th>Who's Called</th>
+                    <th style="text-align:right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="eventListBody">
+                <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-light);">Loading schedule...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="eventContextMenu" class="context-menu">
+    <div class="context-item" onclick="window.EventsModule.handleContextAction('edit')"><i class="fas fa-edit"></i> Edit Details</div>
+    <div class="context-item" onclick="window.EventsModule.handleContextAction('attendance')"><i class="fas fa-check-square"></i> Attendance</div>
+    <div class="context-item" onclick="window.EventsModule.handleContextAction('report')"><i class="fas fa-file-alt"></i> Rehearsal Report</div>
+    <div style="border-top:1px solid var(--ezd-border); margin:5px 0;"></div>
+    <div class="context-item" onclick="window.EventsModule.handleContextAction('duplicate')"><i class="fas fa-copy"></i> Duplicate</div>
+</div>
+
+<script>
+(function() {
+    var currentDate = new Date();
+    window.activeContextEventId = null;
+
+    function getSafeDate(input) {
+        if (!input) return null;
+        if (input instanceof Date) return input;
+        
+        if (typeof input === 'string') {
+            var dateOnly = input.indexOf('T') > -1 ? input.split('T')[0] : input;
+            if (dateOnly.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                var parts = dateOnly.split('-');
+                return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10)); 
+            }
+        }
+        return new Date(input);
+    }
+
+    function safeParseArray(val) {
+        if (!val) return []; 
+        if (Array.isArray(val)) return val;
+        try {
+            var parsed = JSON.parse(val);
+            if (Array.isArray(parsed)) return parsed;
+        } catch (e) {
+            if (typeof val === 'string' && val.indexOf(',') > -1) {
+                var arr = val.split(',');
+                for(var i=0; i<arr.length; i++) arr[i] = arr[i].trim();
+                return arr;
+            }
+        }
+        return typeof val === 'string' ? [val] : [];
+    }
+
+    // THE TIME EXTRACTOR - Extracts time safely from ANY weird Google string
+    function extractTo24(timeStr) {
+        if (!timeStr) return "00:00";
+        var t = String(timeStr).trim().toUpperCase();
+        
+        // If it's a UTC string from the API
+        if (t.indexOf('T') > -1) {
+            var d = new Date(t);
+            if (!isNaN(d.getTime())) {
+                var dh = d.getHours();
+                var dm = d.getMinutes();
+                return (dh < 10 ? '0'+dh : dh) + ':' + (dm < 10 ? '0'+dm : dm);
+            }
+        }
+        
+        // If it's standard text "6:00 PM"
+        var match = t.match(/(\d+):(\d+)/);
+        if (!match) return "00:00";
+        var h = parseInt(match[1], 10);
+        var m = parseInt(match[2], 10);
+        if (t.indexOf('PM') > -1 && h < 12) h += 12;
+        if (t.indexOf('AM') > -1 && h === 12) h = 0;
+        return (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m);
+    }
+
+    window.EventsModule = {
+      getEventColorClass: function(ev) {
+            var searchStr = String(ev.Type || '').toLowerCase() + " " + String(ev.Title || '').toLowerCase();
+            if (searchStr.includes('rehearsal') || searchStr.includes('rehersal')) return 'evt-rehearsal';
+            if (searchStr.includes('performance') || searchStr.includes('show')) return 'evt-performance';
+            if (searchStr.includes('fitting') || searchStr.includes('costume')) return 'evt-fitting';
+            if (searchStr.includes('work') || searchStr.includes('build') || searchStr.includes('tech')) return 'evt-work';
+            if (searchStr.includes('meeting')) return 'evt-other'; // Or map to whatever you want for meetings
+            return 'evt-other';
+        },
+        archiveEvent: function() {
+            var el = document.getElementById('EventID');
+            var id = el ? el.value : null;
+            if(!id) return; 
+            
+            window.EZD_UI.confirm({
+                type: 'danger', title: 'Archive Event?', 
+                message: 'This event will be hidden from active views and turn grey in the spreadsheet. No attendance data will be lost.', 
+                confirmText: 'Yes, Archive'
+            }).then(function(confirmed) {
+                if(confirmed) {
+                    if(window.EZD_UI) window.EZD_UI.setValue('Status', 'Archived');
+                    else document.getElementById('Status').value = 'Archived';
+                    setTimeout(function() { window.EventsModule.saveEvent(); }, 100);
+                }
+            });
+        },
+        
+        init: function() {
+            if (!document.getElementById('events-module-root')) return;
+            var syncUI = function() {
+                window.EventsModule.renderCalendar();
+                window.EventsModule.renderList();
+            };
+            if (window.EZD_STORE && window.EZD_STORE.coreReady) syncUI();
+            window.addEventListener('fdsCoreReady', syncUI);
+        },
+
+        switchView: function(view) {
+            var btns = document.querySelectorAll('.view-btn');
+            for(var i=0; i<btns.length; i++) btns[i].classList.remove('active');
+            var btn = document.querySelector('button[onclick*="' + view + '"]');
+            if(btn) btn.classList.add('active');
+            
+            var cal = document.getElementById('view-calendar');
+            var lst = document.getElementById('view-list');
+            if(view === 'calendar') { cal.classList.add('active'); lst.classList.remove('active'); }
+            else { cal.classList.remove('active'); lst.classList.add('active'); }
+        },
+
+        changeMonth: function(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            this.renderCalendar();
+        },
+        
+        openContextMenu: function(e, eventId) {
+            e.stopPropagation();
+            window.activeContextEventId = eventId;
+            var menu = document.getElementById('eventContextMenu');
+            if(!menu) return; 
+            
+            menu.style.display = 'block';
+            var menuWidth = 180;
+            var screenWidth = window.innerWidth;
+            var leftPos = e.clientX;
+            if ((leftPos + menuWidth) > screenWidth) { leftPos = leftPos - menuWidth; }
+            menu.style.left = leftPos + 'px';
+            menu.style.top = e.clientY + 'px';
+        },
+        
+        closeContextMenu: function() {
+            var menu = document.getElementById('eventContextMenu');
+            if(menu) menu.style.display = 'none';
+        },
+        
+        handleContextAction: function(action) {
+            this.closeContextMenu();
+            if(!window.activeContextEventId) return;
+            if(action === 'edit') this.editEvent(window.activeContextEventId);
+            if(action === 'duplicate') {
+                this.editEvent(window.activeContextEventId);
+                setTimeout(function() { window.EventsModule.duplicateEvent(); }, 300);
+            }
+            if(action === 'attendance') {
+                if(window.loadModule) {
+                    window.FDS_CACHE.targetEventId = window.activeContextEventId; 
+                    window.loadModule('attendance');
+                } else { alert('Attendance module not linked yet.'); }
+            }
+            if(action === 'report') {
+                 if(window.loadModule) {
+                    window.FDS_CACHE.targetEventId = window.activeContextEventId; 
+                    window.loadModule('reports');
+                } else { alert('Reports module not linked yet.'); }
+            }
+        },
+
+        renderCalendar: function() {
+            var grid = document.getElementById('calendarGrid');
+            var title = document.getElementById('calMonthTitle');
+            if (!grid || !title) return;
+            
+            var year = currentDate.getFullYear();
+            var month = currentDate.getMonth(); 
+            title.innerText = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+            
+            var days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            var html = '';
+            for(var d=0; d<days.length; d++) html += '<div class="cal-day-name">' + days[d] + '</div>';
+            
+            var firstDay = new Date(year, month, 1).getDay();
+            var daysInMonth = new Date(year, month + 1, 0).getDate();
+            var prevMonthDays = new Date(year, month, 0).getDate();
+            
+            for (var pd = firstDay - 1; pd >= 0; pd--) { 
+                html += '<div class="cal-day"><span class="day-num other-month">' + (prevMonthDays - pd) + '</span></div>'; 
+            }
+            
+            var evts = window.EZD_STORE.events || [];
+            
+            for (var i = 1; i <= daysInMonth; i++) {
+                var todayDate = new Date();
+                var isToday = (i === todayDate.getDate() && month === todayDate.getMonth() && year === todayDate.getFullYear()) ? 'today' : '';
+                
+                var dayEvents = [];
+                for(var j=0; j<evts.length; j++) {
+                    var e = evts[j];
+                    if (e.Status === 'Archived') continue;
+                    var dObj = getSafeDate(e.Date);
+                    if (dObj && dObj.getFullYear() === year && dObj.getMonth() === month && dObj.getDate() === i) {
+                        dayEvents.push(e);
+                    }
+                }
+                
+                var eventHtml = '';
+                for(var k=0; k<dayEvents.length; k++) {
+                    var ev = dayEvents[k];
+                    
+                    // Uses our new bulletproof helper
+                    var typeClass = window.EventsModule.getEventColorClass(ev); 
+                    
+                    eventHtml += '<div class="cal-event-bar ' + typeClass + '" title="' + (ev.Title || '') + '" onclick="window.EventsModule.openContextMenu(event, \'' + ev.EventID + '\')">' + (ev.StartTime || '') + ' ' + (ev.Title || 'Untitled') + '</div>';
+                }
+                
+                html += '<div class="cal-day ' + isToday + '" onclick="if(window._openEventModal) window._openEventModal()"><span class="day-num">' + i + '</span><div class="day-content">' + eventHtml + '</div></div>';
+            }
+            grid.innerHTML = html;
+        },
+
+        renderList: function(filter) {
+            filter = filter || "";
+            var tbody = document.getElementById('eventListBody');
+            if(!tbody) return;
+            
+            var evts = window.EZD_STORE.events || [];
+            var sorted = [];
+            
+            for(var i=0; i<evts.length; i++) {
+                var e = evts[i];
+                if (e.Status === 'Archived') continue;
+                var title = e.Title || '';
+                if (title.toLowerCase().indexOf(filter.toLowerCase()) > -1) {
+                    sorted.push(e);
+                }
+            }
+            
+            sorted.sort(function(a, b) {
+                var dateA = getSafeDate(a.Date) || new Date(0);
+                var dateB = getSafeDate(b.Date) || new Date(0);
+                return dateB - dateA;
+            });
+                
+            if (sorted.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-light);">No scheduled events found.</td></tr>'; 
+                return; 
+            }
+            
+            var html = '';
+            for(var s=0; s<sorted.length; s++) {
+                var ev = sorted[s];
+                var dt = getSafeDate(ev.Date);
+                var dateStr = dt ? dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '-';
+                
+                // Uses our new bulletproof helper
+                var typeClass = window.EventsModule.getEventColorClass(ev); 
+                
+                var groups = safeParseArray(ev.RequiredGroups);
+                var roles = safeParseArray(ev.RequiredRoles);
+                var reqs = groups.concat(roles);
+                var reqString = reqs.join(', ');
+                if (reqs.length > 3) reqString = reqs.slice(0,3).join(', ') + ' +' + (reqs.length-3);
+                
+                html += '<tr>';
+                html += '<td><div class="list-date">' + dateStr + '</div><div class="list-time">' + (ev.StartTime || '') + ' - ' + (ev.EndTime || '') + '</div></td>';
+                html += '<td><div style="font-weight:600;">' + (ev.Title || '(No Title)') + '</div><span class="evt-chip ' + typeClass + '" style="margin-top:4px;">' + (ev.Type || 'Other') + '</span></td>';
+                html += '<td>' + (ev.Location || '-') + '</td><td><div style="font-size:12px; color:var(--text-light); max-width:200px;">' + (reqString || '-') + '</div></td>';
+                html += '<td style="text-align:right;">';
+                html += '<button onclick="window.EventsModule.editEvent(\'' + ev.EventID + '\')" class="action-btn" title="Edit"><i class="fas fa-edit"></i></button>';
+                html += '<button onclick="window.activeContextEventId=\'' + ev.EventID + '\'; window.EventsModule.handleContextAction(\'attendance\');" class="action-btn primary" title="Take Attendance"><i class="fas fa-check-square"></i></button>';
+                html += '</td></tr>';
+            }
+            tbody.innerHTML = html;
+        },
+
+        editEvent: function(id) {
+            var event = null;
+            var evts = window.EZD_STORE.events || [];
+            for(var i=0; i<evts.length; i++) { if(evts[i].EventID === id) event = evts[i]; }
+            if(!event) return;
+            
+            var modal = document.getElementById('eventModal');
+            if(!modal && window.EZD_UI) { window.EZD_UI.notify('error', 'Error', 'Form Library not loaded.'); return; }
+            if(window.EZD_UI) { window.EZD_UI.init(modal); window.EZD_UI.resetForm(modal); }
+            document.getElementById('EventID').value = event.EventID;
+            
+            var keys = Object.keys(event);
+            for(var k=0; k<keys.length; k++) {
+                var key = keys[k];
+                if(key === 'EventID') continue;
+                var val = event[key];
+                var el = document.getElementById(key);
+                if (!el) continue;
+
+                var isMultiselect = el.getAttribute('data-ezd-type') === 'multiselect';
+                var isCheckbox = el.type === 'checkbox' || el.getAttribute('data-ezd-type') === 'toggle';
+
+                try {
+                    if (key === 'Date' && val && window.EZD_UI) { window.EZD_UI.setValue('Date', val); }
+                    else if (isCheckbox) {
+                        var boolVal = (String(val).toUpperCase() === "TRUE" || val === true);
+                        if (el.type === 'checkbox') el.checked = boolVal;
+                        else if (window.EZD_UI) {
+                            window.EZD_UI.setValue(el.id, boolVal);
+                            var wrapper = document.getElementById('wrap-' + el.id);
+                            if(wrapper) {
+                                if(boolVal) wrapper.classList.add('active');
+                                else wrapper.classList.remove('active');
+                            }
+                        }
+                    }
+                    else if (isMultiselect) {
+                        if (window.EZD_UI) window.EZD_UI.setValue(key, safeParseArray(val));
+                    }
+                    else if (window.EZD_UI) { window.EZD_UI.setValue(key, val); }
+                } catch(err) { console.warn("Skipping field", key, err); }
+            }
+            
+            if(window.EZD_UI) {
+                var st = event.StartTime || "";
+                var et = event.EndTime || "";
+                
+                if (st && et) {
+                    var rangeStr = extractTo24(st) + ',' + extractTo24(et);
+                    window.EZD_UI.setValue('EventTimeRange', rangeStr); 
+                } else {
+                    window.EZD_UI.setValue('EventTimeRange', "");
+                }
+            }
+
+            var loader = document.getElementById('eventLoader');
+            if(loader) loader.style.display = 'none';
+            if(window.EZD_UI) window.EZD_UI.setButtonState('saveEventBtn', 'idle');
+            modal.classList.add('visible');
+        },
+
+        duplicateEvent: function() {
+            var newID = "EVT-" + Math.floor(Date.now() / 1000);
+            var idEl = document.getElementById('EventID');
+            if(idEl) idEl.value = newID;
+            
+            var titleEl = document.getElementById('Title');
+            if (titleEl) { 
+                var input = titleEl.querySelector('input') || titleEl;
+                if(input) input.value = input.value + " (Copy)"; 
+            }
+            if(window.EZD_UI) {
+                window.EZD_UI.notify('info', 'Event Duplicated', 'Review details and save.');
+                window.EZD_UI.setButtonState('saveEventBtn', 'dirty');
+            }
+        },
+
+        saveEvent: function() {
+            var statusEl = document.getElementById('Status');
+            var currentStatus = window.EZD_UI.getComponentValue('Status') || (statusEl ? statusEl.value : 'Scheduled');
+
+            if (currentStatus !== 'Archived') {
+                var requiredFields = ['Title', 'Date', 'EventTimeRange']; 
+                var hasError = false;
+
+                for(var r=0; r<requiredFields.length; r++) {
+                    var id = requiredFields[r];
+                    var el = document.getElementById(id);
+                    var val = window.EZD_UI.getComponentValue(id) || (el ? el.value : "");
+                    if (!val || val.trim() === '') {
+                        hasError = true;
+                        var visibleInput = document.getElementById(id + '-disp') || el;
+                        if (visibleInput) {
+                            visibleInput.classList.remove('invalid');
+                            void visibleInput.offsetWidth; 
+                            visibleInput.classList.add('invalid');
+                            (function(vi) { setTimeout(function() { vi.classList.remove('invalid'); }, 500); })(visibleInput);
+                        }
+                    }
+                }
+
+                if (hasError) {
+                    window.EZD_UI.notify('error', 'Missing Information', 'Please fill out all required fields.');
+                    window.EZD_UI.setButtonState('saveEventBtn', 'error'); 
+                    return; 
+                }
+            }
+
+            window.EZD_UI.setButtonState('saveEventBtn', 'saving');
+            var data = {};
+            
+            data['EventID'] = document.getElementById('EventID').value;
+            data['Status'] = currentStatus;
+            
+            var inputs = document.querySelectorAll('#eventModal input:not([type="checkbox"]), #eventModal select, #eventModal textarea, #eventModal .ezd-store');
+            for(var i=0; i<inputs.length; i++) {
+                var el = inputs[i];
+                if(el.id && el.id.indexOf('-input') === -1 && el.id.indexOf('-disp') === -1 && el.id.indexOf('_') === -1) {
+                    data[el.id] = el.value;
+                }
+            }
+
+            var timeRangeVal = window.EZD_UI.getComponentValue('EventTimeRange') || data['EventTimeRange'];
+            if(timeRangeVal) {
+                var parts = timeRangeVal.split(',');
+                if(parts.length >= 2) {
+                    var format12H = function(t24) {
+                        var p = t24.split(':');
+                        var h = parseInt(p[0], 10);
+                        var ampm = h >= 12 ? 'PM' : 'AM';
+                        var h12 = h % 12 || 12;
+                        var mStr = p[1] ? String(p[1]).padStart(2, '0') : '00';
+                        return h12 + ':' + mStr + ' ' + ampm;
+                    };
+                    data['StartTime'] = format12H(parts[0]);
+                    data['EndTime'] = format12H(parts[1]);
+                }
+            }
+
+            var toggles = ['AutoBarcode', 'SyncGoogleCalendar', 'LocationBarcodeCheck'];
+            for(var t=0; t<toggles.length; t++) {
+                var tid = toggles[t];
+                var tEl = document.getElementById(tid);
+                var tVal = window.EZD_UI.getComponentValue(tid) || (tEl ? tEl.value : "false");
+                data[tid] = (String(tVal).toLowerCase() === 'true') ? 'TRUE' : 'FALSE';
+            }
+            
+            var arrays = ['RequiredGroups', 'RequiredRoles', 'RequiredPeople', 'RequiredCharacters'];
+            for(var a=0; a<arrays.length; a++) {
+                var aid = arrays[a];
+                var aRawVal = window.EZD_UI.getComponentValue(aid) || data[aid] || "[]";
+                try { data[aid] = JSON.stringify(JSON.parse(aRawVal)); } 
+                catch(e) { data[aid] = "[]"; }
+            }
+
+            // SAFE MERGE INTO CACHE
+            var evts = window.EZD_STORE.events || [];
+            var idx = -1;
+            for(var x=0; x<evts.length; x++) { if(evts[x].EventID === data.EventID) { idx = x; break; } }
+            
+            if(idx === -1) {
+                window.EZD_STORE.events.push(data); 
+            } else { 
+                var oldData = window.EZD_STORE.events[idx];
+                var merged = {};
+                var allKeys = Object.keys(oldData).concat(Object.keys(data));
+                for(var y=0; y<allKeys.length; y++) {
+                    var ky = allKeys[y];
+                    merged[ky] = data[ky] !== undefined ? data[ky] : oldData[ky];
+                }
+                window.EZD_STORE.events[idx] = merged;
+            }
+            
+            if (typeof this.renderList === 'function') this.renderList();
+            if (typeof this.renderCalendar === 'function') this.renderCalendar();
+            
+            if(window._closeEventModal) window._closeEventModal();
+            window.EZD_UI.notify('success', 'Event Saved', data.Title || 'Event');
+            window.EZD_UI.setButtonState('saveEventBtn', 'success');
+
+            google.script.run.withSuccessHandler(function(responseStr) {
+                var response;
+                try { response = JSON.parse(responseStr); } catch(e){}
+                if (!response || !response.success) {
+                    window.EZD_UI.notify('error', 'Sync Failed', response ? response.error : 'Unknown error');
+                    window.EZD_UI.setButtonState('saveEventBtn', 'error');
+                } else {
+                    setTimeout(function() { window.EZD_UI.setButtonState('saveEventBtn', 'idle'); }, 2000);
+                    if (window.EZD_SYNC && typeof window.EZD_SYNC.pull === 'function') window.EZD_SYNC.pull(true);
+                }
+            }).withFailureHandler(function(err) {
+                window.EZD_UI.notify('error', 'Network Error', err.message);
+                window.EZD_UI.setButtonState('saveEventBtn', 'error');
+            }).saveEvent_v4(data); 
+        }
+    };
+
+    setTimeout(function() { if(window.EventsModule) window.EventsModule.init(); }, 100);
+})();
+</script>
