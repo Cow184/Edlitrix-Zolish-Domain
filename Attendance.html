@@ -1,0 +1,2496 @@
+<style>
+  /* --- SQUISH UI LIBRARY FOR MANUAL ROW --- */
+    #manualList .ezd-input-group { margin-bottom: 0 !important; }
+    #manualList .ezd-label { font-size: 9px !important; margin-bottom: 2px !important; opacity: 0.8; }
+    #manualList .ezd-smart-input { height: 32px !important; min-height: 32px !important; padding-left: 36px !important; font-size: 11px !important; }
+    #manualList .ezd-fixed-icon { font-size: 11px !important; left: 12px !important; }
+    /* ====== ATTENDANCE SPECIFIC STYLES ====== */
+    .att-header-wrap { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    
+    .att-tabs { display: flex; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 8px; border: 1px solid var(--ezd-border); width: fit-content; }
+    .att-tab { padding: 8px 16px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: var(--text-color); opacity: 0.6; border-radius: 6px; transition: 0.2s; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+    .att-tab:hover { opacity: 1; }
+    .att-tab.active { background: var(--bg-color); color: var(--primary-color); opacity: 1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    body.ezd-dark-mode .att-tabs { background: rgba(255,255,255,0.05); border-color: #334155; }
+    body.ezd-dark-mode .att-tab.active { background: #1e293b; color: var(--primary-color); }
+
+    /* DASHBOARD GRID */
+    .att-header-card { margin-bottom: 15px; }
+    .att-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 15px; margin-top: 15px; }
+    .att-card { background: var(--bg-color); border: 1px solid var(--ezd-border); border-radius: 12px; padding: 15px; border-left: 4px solid var(--text-light); position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: transform 0.2s; cursor: pointer;}
+    .att-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    body.ezd-dark-mode .att-card { background: #1e293b; border-color: #334155; }
+    
+    /* THE STATUS COLORS */
+    .status-Present { border-left-color: #10b981; } 
+    .status-Late { border-left-color: #f59e0b; }    
+    .status-EarlyLeave { border-left-color: #a855f7; }
+    .status-Absent { border-left-color: #ef4444; }   
+    .status-Excused { border-left-color: #3b82f6; } 
+    .status-Missing { border-left-color: #94a3b8; }
+    .status-CheckedOut { border-left-color: #059669; }
+    .toggle-btn.active-CheckedOut { background: #059669 !important; color: white !important; border-color: #059669 !important; box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3) !important;}
+
+    .att-time { position: absolute; top: 15px; right: 15px; font-size: 11px; font-weight: 700; color: var(--text-light); background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 6px; }
+    body.ezd-dark-mode .att-time { background: rgba(255,255,255,0.1); color: var(--text-color); }
+    
+    .att-name { font-weight: 700; font-size: 14px; color: var(--text-color); margin-bottom: 4px; padding-right: 60px; }
+    .att-meta { font-size: 11px; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
+
+    /* KANBAN BOARD 2.0 */
+    .board-container { display: flex; gap: 15px; overflow-x: auto; height: calc(100vh - 255px); min-height: 500px; padding-bottom: 10px; }
+    .board-col { flex: 1; min-width: 280px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid var(--ezd-border); display: flex; flex-direction: column; overflow: hidden; transition: 0.3s; }
+    body.ezd-dark-mode .board-col { background: #0f172a; border-color: #334155; }
+    
+    .board-col-header { padding: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--ezd-border); background: var(--bg-color); border-top: 4px solid var(--text-light); transition: 0.3s; display: flex; justify-content: space-between; align-items: center; }
+    body.ezd-dark-mode .board-col-header { background: #1e293b; border-bottom-color: #334155; }
+    
+    /* Dynamic Kanban Colors */
+    .col-Missing { border-top-color: #94a3b8; color: #64748b; }
+    .col-NotCalled { border-top-color: #cbd5e1; color: #94a3b8; }
+    .col-Present { border-top-color: #10b981; color: #10b981; }
+    .col-CheckedOut { border-top-color: #059669; color: #047857; }
+    .col-Late { border-top-color: #f59e0b; color: #d97706; }
+    .col-Absent { border-top-color: #ef4444; color: #b91c1c; }
+    .col-Excused { border-top-color: #3b82f6; color: #2563eb; }
+    .col-Merged { border-top-color: #6366f1; color: #4f46e5; }
+
+    .board-list { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .mini-card { background: var(--bg-color); padding: 10px; border-radius: 8px; border: 1px solid var(--ezd-border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; border-left: 3px solid transparent; transition: 0.2s;}
+    .mini-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    body.ezd-dark-mode .mini-card { background: #1e293b; border-color: #334155; }
+    
+    .search-row { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--ezd-border); }
+    .search-row input { flex:1; padding: 6px; font-size: 11px; border-radius: 4px; border: 1px solid var(--ezd-border); outline: none; }
+    
+    .col-action-btn { cursor: pointer; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,0.05); transition: 0.2s; font-size: 11px; }
+    .col-action-btn:hover { background: var(--primary-color); color: white; }
+    
+    .card-quick-btn { padding: 4px; width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--ezd-border); background: var(--bg-color); color: var(--text-light); cursor: pointer; display:flex; align-items:center; justify-content:center; transition: 0.2s; }
+    .card-quick-btn:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    body.ezd-dark-mode .card-quick-btn { background: #1e293b; border-color: #334155; }
+
+    /* TIMELINE VIEW */
+    .timeline-container { position: relative; width: 100%; height: calc(100vh - 290px); min-height: 500px; background: var(--bg-color); border: 1px solid var(--ezd-border); border-radius: 12px; overflow-x: auto; overflow-y: auto; padding: 20px 0; }
+    .timeline-scroll { position: relative; min-width: 800px; height: 100%; margin: 0 40px; }
+    .tl-axis { position: absolute; top: 0; left: 0; width: 100%; height: 20px; border-bottom: 1px solid #cbd5e1; }
+    .tl-tick { position: absolute; top: 0; bottom: -5px; border-left: 1px solid #cbd5e1; display: flex; flex-direction: column; justify-content: space-between; }
+    .tl-time-label { font-size: 10px; color: #94a3b8; transform: translateX(-50%); margin-top: -20px; }
+    
+    .tl-event-master { position: absolute; top: 40px; height: 30px; background: rgba(var(--primary-rgb), 0.2); border: 2px solid var(--primary-color); border-radius: 6px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: bold; color: var(--primary-color); cursor: pointer; transition: 0.2s; }
+    .tl-event-master:hover { filter: brightness(1.1); transform: scaleY(1.1); z-index: 10; }
+    
+    .tl-student-line { position: absolute; height: 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .tl-student-line:hover { transform: scaleY(1.5); filter: brightness(1.1); z-index: 10; }
+    .tl-color-present { background: #10b981; }
+    .tl-color-late { background: #f59e0b; }
+    .tl-color-early { background: #a855f7; }
+
+    /* SLIDE OUT DRAWER */
+    .slide-drawer { position: fixed; top: 0; right: -400px; width: 350px; height: 100%; background: var(--bg-color); box-shadow: -5px 0 25px rgba(0,0,0,0.1); z-index: 10000; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding: 20px; display: flex; flex-direction: column; border-left: 1px solid var(--ezd-border); box-sizing: border-box; }
+    .slide-drawer.open { right: 0; }
+    body.ezd-dark-mode .slide-drawer { background: #1e293b; border-color: #334155; }
+
+    /* MANUAL LIST */
+    .manual-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: var(--bg-color); transition: 0.1s; border-bottom: 1px solid var(--ezd-border); border-left: 4px solid transparent; }
+    .manual-row:hover { background: rgba(0,0,0,0.02); }
+    #manualList .tint-green .ezd-label, #manualList .tint-green .ezd-fixed-icon { color: #10b981 !important; font-weight: bold; opacity: 1 !important; }
+    #manualList .tint-green .ezd-smart-input { border-color: rgba(16, 185, 129, 0.3) !important; background: rgba(16, 185, 129, 0.05) !important; }
+    #manualList .tint-purple .ezd-label, #manualList .tint-purple .ezd-fixed-icon { color: #a855f7 !important; font-weight: bold; opacity: 1 !important; }
+    #manualList .tint-purple .ezd-smart-input { border-color: rgba(168, 85, 247, 0.3) !important; background: rgba(168, 85, 247, 0.05) !important; }
+    #manualList .tint-blue .ezd-label, #manualList .tint-blue .ezd-fixed-icon { color: #3b82f6 !important; font-weight: bold; opacity: 1 !important; }
+    #manualList .tint-blue .ezd-smart-input { border-color: rgba(59, 130, 246, 0.3) !important; background: rgba(59, 130, 246, 0.05) !important; }
+    
+    .manual-toggles { display: flex; gap: 5px; }
+    .toggle-btn { width: 32px; height: 32px; border: 1px solid var(--ezd-border); border-radius: 8px; cursor: pointer; background: var(--bg-color); display: flex; align-items: center; justify-content: center; color: var(--text-light); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 2px 4px -1px rgba(0,0,0,0.05); }
+    .toggle-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-color: var(--text-light); color: var(--text-color); }
+    .toggle-btn:active { transform: scale(0.95); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .toggle-btn.active-Present { background: #10b981 !important; color: white !important; border-color: #10b981 !important; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3) !important;}
+    .toggle-btn.active-Late { background: #f59e0b !important; color: white !important; border-color: #f59e0b !important; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3) !important;}
+    .toggle-btn.active-EarlyLeave { background: #a855f7 !important; color: white !important; border-color: #a855f7 !important; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3) !important;}
+    .toggle-btn.active-Absent { background: #ef4444 !important; color: white !important; border-color: #ef4444 !important; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3) !important;}
+    .toggle-btn.active-Excused { background: #3b82f6 !important; color: white !important; border-color: #3b82f6 !important; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3) !important;}
+
+    .att-view { display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .att-view.active { display: block; opacity: 1; transform: translateY(0); }
+    @keyframes cardPop { from { opacity: 0; transform: scale(0.9) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+</style>
+
+<div id="attendance-module-root">
+    
+    <div class="att-header-wrap">
+        <div>
+            <h2 style="color:var(--primary-color); margin:0 0 5px 0;"><i class="fas fa-clipboard-check"></i> Smart Attendance</h2>
+            <div style="font-size:11px; color:var(--text-light);">
+                <span id="liveIndicator" style="color:var(--primary-color); font-weight:700;">● LIVE</span> 
+                <span id="lastUpdate" style="margin-left:5px;">Connecting...</span>
+            </div>
+        </div>
+        
+        <div style="display:flex; gap:15px; align-items:center;">
+            <button class="ezd-btn secondary" onclick="window.AttendanceModule.openBulkEditModal()"><i class="fas fa-layer-group"></i> Bulk Edit</button>
+            <button class="ezd-btn secondary" onclick="window.AttendanceModule.printReport()"><i class="fas fa-print"></i> Print Report</button>
+            <button class="ezd-btn secondary" onclick="window.AttendanceModule.openGlobalEmailModal()"><i class="fas fa-envelope"></i> Email Blast</button>
+            <div style="width: 390px;">
+                <div data-ezd-type="segmented" id="mainViewTab" data-options='[{"label":"Live","val":"dashboard","icon":"fa-satellite-dish"},{"label":"Board","val":"board","icon":"fa-columns"},{"label":"Timeline","val":"timeline","icon":"fa-stream"},{"label":"Manual","val":"manual","icon":"fa-user-check"}]' data-value="dashboard" style="margin-bottom:0;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="att-header-card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width: 300px;"><div data-ezd-type="select" id="globalEventSelect" data-label="Current Event"></div></div>
+            <button class="ezd-btn secondary" style="margin-top:20px;" onclick="window.AttendanceModule.openEventDrawer()"><i class="fas fa-info-circle"></i> Details</button>
+            <button class="ezd-btn secondary" onclick="window.AttendanceModule.openInbox()" style="position:relative; margin-top:20px; overflow:visible !important;">
+                <i class="fas fa-bell"></i> Action Center
+                <span id="inbox-badge" style="display:none; position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; font-size:10px; font-weight:bold; padding:2px 6px; border-radius:10px; border:2px solid var(--bg-color); box-shadow:0 2px 4px rgba(0,0,0,0.2);">0</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="att-view active">
+        <div id="dashGrid" class="att-grid"></div>
+    </div>
+
+    <div id="view-board" class="att-view">
+        <div class="board-container">
+            
+            <div class="board-col col-Missing" id="col-Expected">
+                <div class="board-col-header">
+                    <div>EXPECTED <span class="cnt-badge">0</span></div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="col-action-btn" title="Copy List" onclick="window.AttendanceModule.copyColumn('Expected')"><i class="fas fa-copy"></i></div>
+                        <div class="col-action-btn" title="Email Group" onclick="window.AttendanceModule.emailColumn('Expected')"><i class="fas fa-paper-plane"></i></div>
+                    </div>
+                </div>
+                <div style="padding: 0 10px;">
+                    <div data-ezd-type="segmented" id="segExpected" data-options='[{"label":"Missing","val":0},{"label":"Both","val":1},{"label":"Not Called","val":2}]' data-value="0" style="margin-bottom:0; margin-top:10px;"></div>
+                </div>
+                <div style="padding: 10px 10px 0 10px;">
+                    <div data-ezd-type="input" id="searchExpected" data-label="Search Expected..." data-icon="fa-search" style="margin-bottom:0;"></div>
+                </div>
+                <div class="board-list" id="list-Expected"></div>
+                <button class="ezd-btn secondary" style="margin:5px; padding:4px; font-size:10px;" onclick="window.AttendanceModule.processAbsences()"><i class="fas fa-gavel"></i> Process Absences</button>
+            </div>
+
+            <div class="board-col col-Present" id="col-Present">
+                <div class="board-col-header">
+                    <div>PRESENT <span class="cnt-badge">0</span></div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="col-action-btn" title="Copy List" onclick="window.AttendanceModule.copyColumn('Present')"><i class="fas fa-copy"></i></div>
+                        <div class="col-action-btn" title="Email Group" onclick="window.AttendanceModule.emailColumn('Present')"><i class="fas fa-paper-plane"></i></div>
+                    </div>
+                </div>
+                <div style="padding: 0 10px;">
+                    <div data-ezd-type="segmented" id="segPresent" data-options='[{"label":"Active Now","val":0},{"label":"Both","val":1},{"label":"Checked Out","val":2}]' data-value="0" style="margin-bottom:0; margin-top:10px;"></div>
+                </div>
+                <div style="padding: 10px 10px 0 10px;">
+                    <div data-ezd-type="input" id="searchPresent" data-label="Search Present..." data-icon="fa-search" style="margin-bottom:0;"></div>
+                </div>
+                <div class="board-list" id="list-Present"></div>
+            </div>
+
+            <div class="board-col col-Late" id="col-Late">
+                <div class="board-col-header">
+                    <div style="color:#f59e0b;">ISSUES (LATE/EARLY) <span class="cnt-badge">0</span></div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="col-action-btn" title="Copy List" onclick="window.AttendanceModule.copyColumn('Late')"><i class="fas fa-copy"></i></div>
+                        <div class="col-action-btn" title="Email Group" onclick="window.AttendanceModule.emailColumn('Late')"><i class="fas fa-paper-plane"></i></div>
+                    </div>
+                </div>
+                <div style="padding: 0 10px;">
+                    <div data-ezd-type="segmented" id="segLate" data-options='[{"label":"Late","val":0},{"label":"Both","val":1},{"label":"Left Early","val":2}]' data-value="0" style="margin-bottom:0; margin-top:10px;"></div>
+                </div>
+                <div style="padding: 10px 10px 0 10px;">
+                    <div data-ezd-type="input" id="searchLate" data-label="Search Issues..." data-icon="fa-search" style="margin-bottom:0;"></div>
+                </div>
+                <div class="board-list" id="list-Late"></div>
+            </div>
+
+            <div class="board-col col-Excused" id="col-Excused" style="border-top-color: #3b82f6;">
+                <div class="board-col-header">
+                    <div style="color:#3b82f6;">EXCUSED <span class="cnt-badge">0</span></div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="col-action-btn" title="Copy List" onclick="window.AttendanceModule.copyColumn('Excused')"><i class="fas fa-copy"></i></div>
+                        <div class="col-action-btn" title="Email Group" onclick="window.AttendanceModule.emailColumn('Excused')"><i class="fas fa-paper-plane"></i></div>
+                    </div>
+                </div>
+                <div style="padding: 0 10px;">
+                    <div data-ezd-type="segmented" id="segExcused" data-options='[{"label":"Absences","val":0},{"label":"Both","val":1},{"label":"Late/Early","val":2}]' data-value="1" style="margin-bottom:0; margin-top:10px;"></div>
+                </div>
+                <div style="padding: 10px 10px 0 10px;">
+                    <div data-ezd-type="input" id="searchExcused" data-label="Search Excused..." data-icon="fa-search" style="margin-bottom:0;"></div>
+                </div>
+                <div class="board-list" id="list-Excused"></div>
+            </div>
+
+            <div class="board-col col-Absent" id="col-Absent">
+                <div class="board-col-header">
+                    <div style="color:#ef4444;">ABSENT (UNEXCUSED) <span class="cnt-badge">0</span></div>
+                    <div style="display:flex; gap:5px;">
+                        <div class="col-action-btn" title="Copy List" onclick="window.AttendanceModule.copyColumn('Absent')"><i class="fas fa-copy"></i></div>
+                        <div class="col-action-btn" title="Email Group" onclick="window.AttendanceModule.emailColumn('Absent')"><i class="fas fa-paper-plane"></i></div>
+                    </div>
+                </div>
+                <div style="padding: 10px 10px 0 10px; margin-top:10px;">
+                    <div data-ezd-type="input" id="searchAbsent" data-label="Search Absent..." data-icon="fa-search" style="margin-bottom:0;"></div>
+                </div>
+                <div class="board-list" id="list-Absent"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="view-timeline" class="att-view">
+        <div class="timeline-container">
+            <div class="timeline-scroll" id="tl-canvas">
+                <div class="tl-axis" id="tl-axis"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-manual" class="att-view">
+        <div style="margin-bottom:15px;"><div data-ezd-type="input" id="searchManual" data-label="Search Student" data-icon="fa-search"></div></div>
+        <div id="manualList" style="border:1px solid var(--ezd-border); border-radius:12px; background:var(--bg-color); height: calc(100vh - 335px); min-height: 400px; overflow-y:auto;"></div>
+    </div>
+</div>
+
+<div class="slide-drawer" id="tl-drawer">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--ezd-border); padding-bottom:10px; margin-bottom:15px; flex-shrink:0;">
+        <h3 id="drawer-title" style="margin:0; font-size:16px; color:var(--primary-color);">Profile</h3>
+        <i class="fas fa-times" style="cursor:pointer; color:var(--text-light);" onclick="document.getElementById('tl-drawer').classList.remove('open')"></i>
+    </div>
+    <div id="drawer-content" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-right:5px;"></div>
+    <div id="drawer-footer" style="flex-shrink:0; display:flex; flex-direction:column; gap:8px; padding-top:15px; border-top:1px solid var(--ezd-border); margin-top:10px;"></div>
+</div>
+
+<div class="ezd-dialog-overlay centered-modal" id="emailModal">
+    <div class="ezd-dialog-box" style="max-width: 400px; overflow: visible;">
+        <div class="ezd-dialog-header" style="padding:20px; border-bottom:1px solid var(--ezd-border);">
+            <h3 style="margin:0;"><i class="fas fa-envelope"></i> Email Status Group</h3>
+        </div>
+        <div class="ezd-dialog-content" style="overflow: visible; min-height: 280px;">
+            <div data-ezd-type="multiselect" id="emailStatuses" data-label="Select Statuses" data-ezd-options='["Present", "Late", "Early Leave", "Absent", "Missing"]'></div>
+        </div>
+        <div class="ezd-dialog-footer" style="justify-content:space-between; padding:15px 20px;">
+            <button class="ezd-btn secondary" onclick="document.getElementById('emailModal').classList.remove('visible')">Cancel</button>
+            <button class="ezd-btn" onclick="window.AttendanceModule.executeGlobalEmail()"><i class="fas fa-paper-plane"></i> Draft Email</button>
+        </div>
+    </div>
+</div>
+
+<div class="ezd-dialog-overlay centered-modal" id="bulkEditModal">
+    <div class="ezd-dialog-box" style="max-width: 750px;">
+        <div class="ezd-dialog-header" style="padding: 20px; border-bottom: 1px solid var(--ezd-border);">
+            <h3 style="margin: 0;"><i class="fas fa-layer-group" style="margin-right: 8px;"></i> Bulk Edit Attendance</h3>
+        </div>
+        <div class="ezd-dialog-content" style="padding: 20px; min-height: 400px;">
+            
+            <div style="display: flex; gap: 30px;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-size:11px; font-weight:bold; color:var(--text-light); text-transform:uppercase; margin-bottom:5px;">1. Who to Update (Matches ANY)</div>
+                    <div data-ezd-type="multiselect" id="bulkGroups" data-label="Select Groups" data-ezd-list="groups" style="margin-bottom:0;"></div>
+                    <div data-ezd-type="multiselect" id="bulkRoles" data-label="Select Roles" data-ezd-list="roles" style="margin-bottom:0;"></div>
+                    <div data-ezd-type="multiselect" id="bulkCharacters" data-label="Select Characters" data-ezd-list="characters" style="margin-bottom:0;"></div>
+                    <div data-ezd-type="multiselect" id="bulkPeople" data-label="Select Individuals" data-ezd-list="people" style="margin-bottom:0;"></div>
+                </div>
+
+                <div style="width: 1px; background: var(--ezd-border); margin: 5px 0;"></div>
+
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-size:11px; font-weight:bold; color:var(--text-light); text-transform:uppercase; margin-bottom:5px;">2. What to Set</div>
+                    
+                    <div data-ezd-type="select" id="bulkStatus" data-label="Set Status" data-ezd-options='["-- Keep Current Status --", "Present", "Late", "Checked Out", "Absent", "Excused", "Missing (Clear Data)"]' style="margin-bottom:0;"></div>
+                    
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <div style="flex:1;"><div data-ezd-type="drum-time" id="bulkArrive" data-label="Excused Till"></div></div>
+                        <div style="flex:1;"><div data-ezd-type="drum-time" id="bulkDepart" data-label="Leave After"></div></div>
+                    </div>
+                    
+                    <div style="font-size:10px; color:var(--text-light); font-style:italic; margin-top:15px; line-height: 1.5; background: rgba(0,0,0,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--ezd-border);">
+                        <i class="fas fa-info-circle"></i> <b>Pro Tip:</b> Leave times blank to keep existing times. Type <b>CLEAR</b> to wipe them completely.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="ezd-dialog-footer" style="justify-content:space-between; padding: 15px 20px;">
+            <button class="ezd-btn secondary" onclick="document.getElementById('bulkEditModal').classList.remove('visible')">Cancel</button>
+            <button class="ezd-btn" id="runBulkEditBtn" onclick="window.AttendanceModule.submitBulkEdit()"><i class="fas fa-bolt"></i> Apply Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    function formatDisplayTime(timeStr) {
+        if (!timeStr) return "";
+        var t = String(timeStr);
+        if (t.includes('T') && t.includes('Z')) {
+            var d = new Date(t);
+            var h = d.getHours();
+            var m = String(d.getMinutes()).padStart(2, '0');
+            var ampm = h >= 12 ? 'PM' : 'AM';
+            var h12 = h % 12 || 12;
+            return h12 + ':' + m + ' ' + ampm;
+        }
+        return t; 
+    }
+
+    if (!window.PeopleModule) { window.PeopleModule = {}; }
+    
+    if (!window.PeopleModule.editPerson) {
+        window.PeopleModule.getFormSnapshot = function() {
+            var data = {};
+            var selector = '#personModal .ezd-store, #personModal .ezd-smart-input, #personModal textarea';
+            document.querySelectorAll(selector).forEach(function(el) {
+                if(el.id && !el.id.includes('-disp') && !el.id.includes('_')) {
+                    data[el.id] = el.value;
+                }
+            });
+            return JSON.stringify(data);
+        };
+        
+        window.PeopleModule.setupDirtyCheck = function() {
+            var that = this;
+            var modal = document.getElementById('personModal');
+            var check = function() {
+                setTimeout(function() {
+                    var current = that.getFormSnapshot();
+                    var isDirty = (current !== that.baseline);
+                    if (isDirty && window.EZD_UI) window.EZD_UI.setButtonState('savePersonBtn', 'dirty');
+                    else if (window.EZD_UI) window.EZD_UI.setButtonState('savePersonBtn', 'idle');
+                }, 10);
+            };
+            if (modal.dataset.hasListener) return;
+            modal.addEventListener('input', check);
+            modal.addEventListener('change', check);
+            modal.addEventListener('keyup', check);
+            modal.dataset.hasListener = "true";
+        };
+        
+        window.PeopleModule.editPerson = function(sid) {
+            var modal = document.getElementById('personModal');
+            if(!modal && window.EZD_UI) { window.EZD_UI.notify('error', 'Error', 'Form Library not loaded.'); return; }
+            if(window.EZD_UI) { window.EZD_UI.init(modal); window.EZD_UI.resetForm(modal); }
+            if(window.EZD_UI) window.EZD_UI.setButtonState('savePersonBtn', 'idle');
+            
+            var person = window.EZD_STORE.people.find(function(p) { return String(p.SystemID) === String(sid); });
+            if (!person) { if(window.EZD_UI) window.EZD_UI.notify('error', 'Error', 'Person not found.'); return; }
+
+            var inputMap = {};
+            modal.querySelectorAll('[id]').forEach(function(el) { inputMap[el.id.toLowerCase().replace(/[^a-z0-9]/g, '')] = el; });
+
+            Object.keys(person).forEach(function(key) {
+                var val = person[key];
+                var searchKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (key === 'Status') searchKey = 'personstatus';
+                if (key === 'Notes') searchKey = 'personnotes';
+                var el = inputMap[searchKey];
+                if (el) {
+                    if (key === 'PhotoRelease' && el.classList.contains('ezd-store')) val = (val === "Yes" || val === true);
+                    if (el.classList.contains('ezd-store') || el.type === 'hidden') {
+                        if(window.EZD_UI) window.EZD_UI.setValue(el.id, val);
+                    } else if (el.tagName === 'INPUT') {
+                        el.value = (val && key.includes('Date') && typeof val === 'string') ? val.split('T')[0] : val;
+                    }
+                }
+            });
+
+            modal.classList.add('visible');
+            document.getElementById('savePersonBtn').style.pointerEvents = 'auto';
+            var prev = document.getElementById('existingPhoto');
+            if (person.ProfilePhotoURL && person.ProfilePhotoURL.startsWith('http')) { 
+                prev.src = person.ProfilePhotoURL; prev.classList.add('visible'); 
+            } else { prev.classList.remove('visible'); }
+
+            if(window.switchFormTab) window.switchFormTab('basic');
+            this.baseline = this.getFormSnapshot();
+            this.setupDirtyCheck();
+        };
+        
+        window.PeopleModule.savePerson = function() {
+            var currentStatus = window.EZD_UI.getComponentValue('PersonStatus') || (document.getElementById('PersonStatus') ? document.getElementById('PersonStatus').value : "");
+            
+            if (currentStatus !== 'Archived') {
+                var requiredFields = ['FirstName', 'LastName', 'Role']; 
+                var hasError = false;
+                requiredFields.forEach(function(id) {
+                    var el = document.getElementById(id);
+                    var val = window.EZD_UI.getComponentValue(id) || (el ? el.value : "");
+                    if (!val || val.trim() === '') {
+                        hasError = true;
+                        var visibleInput = document.getElementById(id + '-disp') || el;
+                        if (visibleInput) {
+                            visibleInput.classList.remove('invalid');
+                            void visibleInput.offsetWidth; 
+                            visibleInput.classList.add('invalid');
+                            setTimeout(function() { visibleInput.classList.remove('invalid'); }, 500);
+                        }
+                    }
+                });
+                if (hasError) {
+                    if(window.switchFormTab) window.switchFormTab('basic');
+                    window.EZD_UI.notify('error', 'Missing Information', 'First Name, Last Name, and Role are required.');
+                    window.EZD_UI.setButtonState('savePersonBtn', 'error'); 
+                    return; 
+                }
+            }
+
+            window.EZD_UI.setButtonState('savePersonBtn', 'saving');
+            var data = {};
+            var selector = '#personModal .ezd-store, #personModal .ezd-smart-input, #personModal textarea';
+            document.querySelectorAll(selector).forEach(function(el) {
+                if(el.id && !el.id.includes('-disp') && !el.id.includes('_')) {
+                    var val = el.value;
+                    if(el.id === 'PhotoRelease') val = (val === 'true' || val === true) ? "Yes" : "No";
+                    data[el.id] = val;
+                }
+            });
+
+            if (data['PersonStatus'] !== undefined) { data['Status'] = data['PersonStatus']; delete data['PersonStatus']; }
+            if (data['PersonNotes'] !== undefined) { data['Notes'] = data['PersonNotes']; delete data['PersonNotes']; }
+
+            var store = window.EZD_STORE.people;
+            var idx = store.findIndex(function(p) { return String(p.SystemID) === String(data.SystemID); });
+            if (idx === -1) store.push(data); 
+            else store[idx] = Object.assign({}, store[idx], data);
+
+            if(window._closeModal) window._closeModal();
+            window.EZD_UI.notify('success', 'Profile Saved', 'Updated ' + (data.FirstName || 'Record'));
+            window.EZD_UI.setButtonState('savePersonBtn', 'success');
+
+            google.script.run
+                .withSuccessHandler(function(res) {
+                    if(!res.success) {
+                        window.EZD_UI.notify('error','Sync Failed', res.message);
+                        window.EZD_UI.setButtonState('savePersonBtn', 'error'); 
+                    } else {
+                        setTimeout(function() { window.EZD_UI.setButtonState('savePersonBtn', 'idle'); }, 2000);
+                        if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true);
+                    }
+                })
+                .processPersonUpdate(data);
+        }; // <--- END OF savePerson
+
+        // START OF archivePerson
+        window.PeopleModule.archivePerson = function() {
+            var sysId = document.getElementById('SystemID').value;
+            if (!sysId) return;
+
+            window.EZD_UI.confirm({ 
+                type: 'warning', 
+                title: 'Archive Profile?', 
+                message: 'Are you sure you want to archive this user? This will hide them from active lists.', 
+                confirmText: 'Archive' 
+            }).then(function(res) {
+                if (res) {
+                    window.EZD_UI.setValue('PersonStatus', 'Archived');
+                    window.PeopleModule.savePerson(); // Triggers the save with the new status
+                }
+            });
+        };
+    } 
+
+    if (!window.EventsModule) { window.EventsModule = {}; }
+    if (!window.EventsModule.editEvent) {
+        
+        var safeParseArray = function(val) {
+            if (!val) return []; 
+            if (Array.isArray(val)) return val;
+            try {
+                var parsed = JSON.parse(val);
+                if (Array.isArray(parsed)) return parsed;
+            } catch (e) {
+                if (typeof val === 'string' && val.includes(',')) return val.split(',').map(function(s) { return s.trim(); });
+            }
+            return typeof val === 'string' ? [val] : [];
+        };
+
+        window.EventsModule.editEvent = function(eid) {
+            var modal = document.getElementById('eventModal');
+            if(!modal && window.EZD_UI) { window.EZD_UI.notify('error', 'Error', 'Form Library not loaded.'); return; }
+            if(window.EZD_UI) { window.EZD_UI.init(modal); window.EZD_UI.resetForm(modal); }
+            if(window.EZD_UI) window.EZD_UI.setButtonState('saveEventBtn', 'idle');
+            
+            var event = window.EZD_STORE.events.find(function(e) { return String(e.EventID) === String(eid); });
+            if (!event) { if(window.EZD_UI) window.EZD_UI.notify('error', 'Error', 'Event not found.'); return; }
+
+            var idEl = document.getElementById('EventID');
+            if(idEl) idEl.value = event.EventID;
+
+            var inputMap = {};
+            modal.querySelectorAll('[id]').forEach(function(el) { inputMap[el.id.toLowerCase().replace(/[^a-z0-9]/g, '')] = el; });
+
+            Object.keys(event).forEach(function(key) {
+                if(key === 'EventID') return;
+                var val = event[key];
+                var searchKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                var el = inputMap[searchKey];
+                if (el) {
+                    if (['AutoBarcode', 'SyncGoogleCalendar', 'LocationBarcodeCheck'].includes(key)) {
+                        val = (String(val).toUpperCase() === "TRUE" || val === true);
+                    }
+                    if (el.classList.contains('ezd-store') || el.type === 'hidden') {
+                        if(window.EZD_UI) window.EZD_UI.setValue(el.id, val);
+                    } else if (el.tagName === 'INPUT') {
+                        el.value = (val && key.includes('Date') && typeof val === 'string') ? val.split('T')[0] : val;
+                    }
+                }
+            });
+            
+            var st = formatDisplayTime(event.StartTime);
+            var et = formatDisplayTime(event.EndTime);
+            
+            if (st && et) {
+                var to24 = function(timeStr) {
+                    let t = String(timeStr).trim().toUpperCase();
+                    let match = t.match(/(\d+):(\d+)/);
+                    if(!match) return "00:00";
+                    let h = parseInt(match[1], 10);
+                    let m = parseInt(match[2], 10);
+                    if (t.includes('PM') && h < 12) h += 12;
+                    if (t.includes('AM') && h === 12) h = 0;
+                    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+                };
+                if(window.EZD_UI) window.EZD_UI.setValue('EventTimeRange', to24(st) + ',' + to24(et));
+            } else {
+                if(window.EZD_UI) window.EZD_UI.setValue('EventTimeRange', "");
+            }
+            
+            modal.classList.add('visible');
+        };
+        
+        window.EventsModule.saveEvent = function() {
+            var statusEl = document.getElementById('Status');
+            var currentStatus = window.EZD_UI.getComponentValue('Status') || (statusEl ? statusEl.value : 'Scheduled');
+
+            if (currentStatus !== 'Archived') {
+                var requiredFields = ['Title', 'Date', 'EventTimeRange']; 
+                var hasError = false;
+
+                for(var r=0; r<requiredFields.length; r++) {
+                    var id = requiredFields[r];
+                    var el = document.getElementById(id);
+                    var val = window.EZD_UI.getComponentValue(id) || (el ? el.value : "");
+                    if (!val || val.trim() === '') {
+                        hasError = true;
+                        var visibleInput = document.getElementById(id + '-disp') || el;
+                        if (visibleInput) {
+                            visibleInput.classList.remove('invalid');
+                            void visibleInput.offsetWidth; 
+                            visibleInput.classList.add('invalid');
+                            (function(vi) { setTimeout(function() { vi.classList.remove('invalid'); }, 500); })(visibleInput);
+                        }
+                    }
+                }
+
+                if (hasError) {
+                    window.EZD_UI.notify('error', 'Missing Information', 'Please fill out all required fields.');
+                    window.EZD_UI.setButtonState('saveEventBtn', 'error'); 
+                    return; 
+                }
+            }
+
+            window.EZD_UI.setButtonState('saveEventBtn', 'saving');
+            var data = {};
+            
+            data['EventID'] = document.getElementById('EventID').value;
+            data['Status'] = currentStatus;
+            
+            var inputs = document.querySelectorAll('#eventModal input:not([type="checkbox"]), #eventModal select, #eventModal textarea, #eventModal .ezd-store');
+            for(var i=0; i<inputs.length; i++) {
+                var el = inputs[i];
+                if(el.id && el.id.indexOf('-input') === -1 && el.id.indexOf('-disp') === -1 && el.id.indexOf('_') === -1) {
+                    data[el.id] = el.value;
+                }
+            }
+
+            var timeRangeVal = window.EZD_UI.getComponentValue('EventTimeRange') || data['EventTimeRange'];
+            if(timeRangeVal) {
+                var parts = timeRangeVal.split(',');
+                if(parts.length >= 2) {
+                    var format12H = function(t24) {
+                        var p = t24.split(':');
+                        var h = parseInt(p[0], 10);
+                        var ampm = h >= 12 ? 'PM' : 'AM';
+                        var h12 = h % 12 || 12;
+                        var mStr = p[1] ? String(p[1]).padStart(2, '0') : '00';
+                        return h12 + ':' + mStr + ' ' + ampm;
+                    };
+                    data['StartTime'] = format12H(parts[0]);
+                    data['EndTime'] = format12H(parts[1]);
+                }
+            }
+
+            var toggles = ['AutoBarcode', 'SyncGoogleCalendar', 'LocationBarcodeCheck'];
+            for(var t=0; t<toggles.length; t++) {
+                var tid = toggles[t];
+                var tEl = document.getElementById(tid);
+                var tVal = window.EZD_UI.getComponentValue(tid) || (tEl ? tEl.value : "false");
+                data[tid] = (String(tVal).toLowerCase() === 'true') ? 'TRUE' : 'FALSE';
+            }
+            
+            var arrays = ['RequiredGroups', 'RequiredRoles', 'RequiredPeople', 'RequiredCharacters'];
+            for(var a=0; a<arrays.length; a++) {
+                var aid = arrays[a];
+                var aRawVal = window.EZD_UI.getComponentValue(aid) || data[aid] || "[]";
+                try { data[aid] = JSON.stringify(JSON.parse(aRawVal)); } 
+                catch(e) { data[aid] = "[]"; }
+            }
+
+            var evts = window.EZD_STORE.events || [];
+            var idx = -1;
+            for(var x=0; x<evts.length; x++) { if(evts[x].EventID === data.EventID) { idx = x; break; } }
+            
+            if(idx === -1) {
+                window.EZD_STORE.events.push(data); 
+            } else { 
+                var oldData = window.EZD_STORE.events[idx];
+                var merged = {};
+                var allKeys = Object.keys(oldData).concat(Object.keys(data));
+                for(var y=0; y<allKeys.length; y++) {
+                    var ky = allKeys[y];
+                    merged[ky] = data[ky] !== undefined ? data[ky] : oldData[ky];
+                }
+                window.EZD_STORE.events[idx] = merged;
+            }
+            
+            if (typeof this.renderList === 'function') this.renderList();
+            if (typeof this.renderCalendar === 'function') this.renderCalendar();
+
+            if (window.AttendanceModule && typeof window.AttendanceModule.syncFromStore === 'function') {
+                window.AttendanceModule.syncFromStore(false);
+            }
+            
+            if(window._closeEventModal) window._closeEventModal();
+            window.EZD_UI.notify('success', 'Event Saved', data.Title || 'Event');
+            window.EZD_UI.setButtonState('saveEventBtn', 'success');
+
+            google.script.run.withSuccessHandler(function(responseStr) {
+                var response;
+                try { response = JSON.parse(responseStr); } catch(e){}
+                if (!response || !response.success) {
+                    window.EZD_UI.notify('error', 'Sync Failed', response ? response.error : 'Unknown error');
+                    window.EZD_UI.setButtonState('saveEventBtn', 'error');
+                } else {
+                    setTimeout(function() { window.EZD_UI.setButtonState('saveEventBtn', 'idle'); }, 2000);
+                    if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true);
+                }
+            }).withFailureHandler(function(err) {
+                window.EZD_UI.notify('error', 'Network Error', err.message);
+                window.EZD_UI.setButtonState('saveEventBtn', 'error');
+            }).saveEvent_v4(data); 
+        };
+        window.EventsModule.archiveEvent = function() {
+            var evtId = document.getElementById('EventID').value;
+            if (!evtId) return;
+
+            window.EZD_UI.confirm({ 
+                type: 'warning', 
+                title: 'Archive Event?', 
+                message: 'Are you sure you want to archive this event? It will be removed from the active schedule.', 
+                confirmText: 'Archive' 
+            }).then(function(res) {
+                if (res) {
+                    window.EZD_UI.setValue('Status', 'Archived');
+                    window.EventsModule.saveEvent(); // Triggers the save with the new status
+                }
+            });
+        };
+    }
+
+    window.AttendanceModule = {
+        pausePoller: function() {
+            this.state.pauseUpdatesUntil = Date.now() + 10000; 
+        },
+
+        _instantUIRefresh: function() {
+            if (this.state.currentTab === 'dashboard') this.renderDashboard();
+            if (this.state.currentTab === 'board') this.renderKanban();
+            if (this.state.currentTab === 'timeline') this.renderTimeline();
+            
+            this.updateBadge(); 
+            
+            var drawer = document.getElementById('tl-drawer');
+            if (drawer && drawer.classList.contains('open')) {
+                var titleText = document.getElementById('drawer-title').innerText;
+                if (titleText === 'Action Center') this.openInbox(); 
+                else if (titleText.includes('Profile') && this.state.currentDrawerSysId) this.openStudentDrawer(this.state.currentDrawerSysId, true); 
+            }
+        },
+
+        isTimeParadox: function(inStr, outStr) {
+            if (!inStr || !outStr) return false;
+            var parse = function(t) {
+                var m = String(t).match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if(!m) return null;
+                var h = parseInt(m[1]), min = parseInt(m[2]), ampm = m[3];
+                if(ampm && ampm.toUpperCase() === 'PM' && h < 12) h += 12;
+                if(ampm && ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+                return (h * 60) + min;
+            };
+            var inMins = parse(inStr);
+            var outMins = parse(outStr);
+            if (inMins === null || outMins === null) return false;
+
+            if (outMins < inMins) {
+                if (inMins >= 720 && outMins < 720) return false; 
+                return true; 
+            }
+            return false;
+        },
+
+        openInbox: function() {
+            var self = this;
+            var unprocessed = [];
+            var processed = this.getProcessedPeople();
+            var eid = this.state.currentEventID;
+
+            var event = this.data.events.find(e => e.EventID === eid);
+            var expectedStart = event ? formatDisplayTime(event.StartTime) : null;
+            var expectedEnd = event ? formatDisplayTime(event.EndTime) : null;
+
+            var eTitle = event ? event.Title : 'Current Event';
+            var eDate = event && event.Date ? new Date(event.Date.split('T')[0]).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+            var eventStr = eDate ? (eDate + ' - ' + eTitle) : eTitle; 
+
+            processed.forEach(function(r) {
+                var isConflict = r.tags.cleanNote && r.tags.cleanNote.includes('[PRIOR_ABSENCE:') && r.tags.in;
+                var isSilenced = r.tags.cleanNote && r.tags.cleanNote.includes('[UNEXCUSED]');
+                
+                var isLate = r.record && r.record.Status === 'Late' && !r.tags.cleanNote.includes('[EXCUSED_LATE:') && !isSilenced;
+                var isEarly = r.record && r.record.Status === 'Checked Out' && r.tags.cleanNote.includes('[EARLY_LEAVE:') && !r.tags.cleanNote.includes('[EXCUSED_LEAVE:') && !isSilenced;
+                var isParadox = r.tags.in && r.tags.out && self.isTimeParadox(r.tags.in, r.tags.out);
+
+                if (isConflict || isLate || isEarly || isParadox) {
+                    var historyCount = 0;
+                    self.data.attendance.forEach(a => {
+                        if (String(a.SystemID) === String(r.person.SystemID) && (a.Status === 'Late' || a.Status === 'Absent')) historyCount++;
+                    });
+
+                    var deltaText = "";
+                    if (isLate && expectedStart && r.tags.in) deltaText = " <b style='color:#b45309;'>(" + self.calculateDelta(r.tags.in, expectedStart) + " late)</b>";
+                    if (isEarly && expectedEnd && r.tags.out) deltaText = " <b style='color:#7e22ce;'>(" + self.calculateDelta(r.tags.out, expectedEnd) + " early)</b>";
+
+                    var type = 'Late', time = r.tags.in;
+                    if (isEarly) { type = 'Leave'; time = r.tags.out; }
+                    if (isConflict) { type = 'Conflict'; time = r.tags.in; }
+                    if (isParadox) { type = 'Paradox'; time = r.tags.in; }
+
+                    var item = { person: r.person, type: type, time: time, delta: deltaText, history: historyCount, r: r };
+                    unprocessed.push(item);
+                }
+            });
+
+            unprocessed.sort((a,b) => {
+                var order = { 'Paradox': 1, 'Conflict': 2, 'Leave': 3, 'Late': 4 };
+                return order[a.type] - order[b.type];
+            });
+
+            var html = '<div style="padding:20px;">';
+            html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">';
+            html += '<h3 style="margin:0;">Resolution Inbox</h3>';
+            html += '<button class="ezd-btn secondary" style="font-size:10px; padding:4px 8px;" onclick="window.AttendanceModule.openBulkEditModal()"><i class="fas fa-layer-group"></i> Bulk Edit</button>';
+            html += '</div>';
+            
+            if (unprocessed.length === 0) {
+                html += '<div style="text-align:center; padding:40px; color:var(--text-light);"><i class="fas fa-check-circle" style="font-size:30px; margin-bottom:15px; opacity:0.2;"></i><div>All clear!</div></div>';
+            }
+
+            unprocessed.forEach(function(item) {
+                var isHabitual = item.history >= 3;
+                var isConflict = item.type === 'Conflict';
+                var isParadox = item.type === 'Paradox';
+                var borderColor = item.type === 'Late' ? '#f59e0b' : (item.type === 'Leave' ? '#a855f7' : (item.type === 'Paradox' ? '#be123c' : '#ef4444'));
+
+                html += '<div class="ezd-card" style="margin-bottom:12px; padding:15px; border-left:4px solid ' + borderColor + ';">';
+                html += '<div style="display:flex; justify-content:space-between; align-items:flex-start;">';
+                html += '<div><div style="font-weight:700;">' + item.person.FirstName + ' ' + item.person.LastName + '</div>';
+                
+                if (isConflict) {
+                    html += '<div style="font-size:11px; font-weight:800; color:#ef4444; margin-top:2px;"><i class="fas fa-shield-alt"></i> Marked Absent but scanned IN at ' + item.time + '</div></div>';
+                } else if (isParadox) {
+                    html += '<div style="font-size:11px; font-weight:800; color:#be123c; margin-top:2px;"><i class="fas fa-history"></i> Time Error: Out (' + item.r.tags.out + ') is before In (' + item.r.tags.in + ')</div></div>';
+                } else {
+                    html += '<div style="font-size:11px; color:var(--text-light);">Unexcused ' + item.type + ' at ' + item.time + item.delta + '</div>';
+                    html += '<div style="font-size:10px; color:var(--text-light); margin-top:2px; font-weight:600;"><i class="fas fa-calendar-day"></i> ' + eventStr + '</div></div>';
+                }
+
+                if (isHabitual && !isConflict && !isParadox) html += '<div style="background:#fee2e2; color:#991b1b; font-size:9px; font-weight:900; padding:2px 6px; border-radius:4px; border:1px solid #f87171;" title="Habitual Offender"><i class="fas fa-exclamation-triangle"></i> ' + item.history + 'X</div>';
+                html += '</div>';
+                
+                html += '<div style="display:flex; gap:8px; margin-top:10px;">';
+                if (isConflict) {
+                    html += '<button class="ezd-btn" style="flex:1; font-size:10px; background:#ef4444; border-color:#ef4444;" onclick="window.AttendanceModule.resolveConflict(\'' + item.person.SystemID + '\', \'' + eid + '\', true)">Verify Present</button>';
+                    html += '<button class="ezd-btn secondary" style="flex:1; font-size:10px;" onclick="window.AttendanceModule.resolveConflict(\'' + item.person.SystemID + '\', \'' + eid + '\', false)">Reject Scan</button>';
+                } else if (isParadox) {
+                    html += '<button class="ezd-btn" style="flex:1; font-size:10px; background:#be123c; border-color:#be123c;" onclick="window.AttendanceModule.swapTimes(\'' + item.person.SystemID + '\', \'' + eid + '\'); document.getElementById(\'tl-drawer\').classList.remove(\'open\');"><i class="fas fa-exchange-alt"></i> Swap</button>';
+                    html += '<button class="ezd-btn secondary" style="flex:1; font-size:10px;" onclick="window.AttendanceModule.scheduleException(\'' + item.person.SystemID + '\', \'' + eid + '\', \'OUT\', \'\'); document.getElementById(\'tl-drawer\').classList.remove(\'open\');">Wipe OUT</button>';
+                } else {
+                    var targetStatus = item.type === 'Late' ? 'Excuse Late' : 'Excuse Leave';
+                    html += '<button class="ezd-btn" style="flex:1; font-size:10px; padding:6px 2px;" onclick="window.AttendanceModule.setStatus(\'' + item.person.SystemID + '\', \'' + eid + '\', \'' + targetStatus + '\')">Excuse</button>';
+                    html += '<button class="ezd-btn secondary" style="flex:1; font-size:10px; padding:6px 2px;" onclick="window.AttendanceModule.silenceException(\'' + item.person.SystemID + '\', \'' + eid + '\')">Deny</button>';
+                    html += '<button class="ezd-btn secondary" style="flex:1; font-size:10px; padding:6px 2px;" onclick="window.AttendanceModule.openStudentDrawer(\'' + item.person.SystemID + '\')">History</button>';
+                }
+                html += '</div></div>';
+            });
+
+            html += '</div>';
+            document.getElementById('drawer-title').innerText = "Action Center";
+            document.getElementById('drawer-content').innerHTML = html;
+            document.getElementById('drawer-footer').innerHTML = ""; 
+            document.getElementById('tl-drawer').classList.add('open');
+        },
+
+        executeAutoCheckout: function(sysId, eid, timeVal) {
+            this.state.pauseUpdatesUntil = Date.now() + 5000;
+            var rec = null;
+            for(var i=0; i<this.data.attendance.length; i++) {
+                if(this.data.attendance[i].EventID === eid && String(this.data.attendance[i].SystemID) === String(sysId)) {
+                    rec = this.data.attendance[i];
+                }
+            }
+            var note = rec ? (rec.Note || "") : "";
+            if (!note.includes("[OUT:")) {
+                note = "[OUT_SRC: SYSTEM] [OUT: " + timeVal + "] " + note;
+            }
+            if(rec) {
+                rec.Status = 'Checked Out';
+                rec.Note = note;
+            } else {
+                this.data.attendance.push({ EventID: eid, SystemID: sysId, Status: 'Checked Out', Note: note });
+            }
+            this.flashWrap();
+            this._instantUIRefresh(); 
+            google.script.run.withSuccessHandler(function() { 
+                if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true); 
+            }).updateManualAttendance({ EventID: eid, SystemID: sysId, Status: 'Checked Out', Note: note });
+        },
+
+        updateBadge: function() {
+            var count = 0;
+            var eid = this.state.currentEventID;
+
+            this.getProcessedPeople().forEach(r => {
+                var isConflict = r.tags.cleanNote && r.tags.cleanNote.includes('[PRIOR_ABSENCE:') && r.tags.in;
+                var isSilenced = r.tags.cleanNote && r.tags.cleanNote.includes('[UNEXCUSED]');
+                
+                var isLate = r.record && r.record.Status === 'Late' && !r.tags.cleanNote.includes('[EXCUSED_LATE:') && !isSilenced;
+                var isEarly = r.record && r.record.Status === 'Checked Out' && r.tags.cleanNote.includes('[EARLY_LEAVE:') && !r.tags.cleanNote.includes('[EXCUSED_LEAVE:') && !isSilenced;
+                var isParadox = r.tags.in && r.tags.out && this.isTimeParadox(r.tags.in, r.tags.out);
+
+                if(isConflict || isLate || isEarly || isParadox) count++;
+            });
+            var badge = document.getElementById('inbox-badge');
+            if(badge) {
+                badge.innerText = count;
+                badge.style.display = count > 0 ? 'block' : 'none';
+            }
+        },
+
+        data: { events: [], attendance: [], people: [] },
+        state: { 
+            currentTab: 'dashboard', 
+            currentEventID: null, 
+            pauseUpdatesUntil: 0,
+            segments: { Expected: 0, Present: 0, Late: 0, Absent: 0, Excused: 1 },
+            search: { Expected: "", Present: "", Late: "", Absent: "", Excused: "", manual: "" },
+            limits: { Expected: 20, Present: 20, Late: 20, Absent: 20, Excused: 20 },
+            drawerEmails: [],
+            allowAnimation: false,
+            currentDrawerSysId: null,
+            lastAttString: "",
+            pendingRedraw: false 
+        },
+
+        init: function() {
+            if (window.EZD_UI) window.EZD_UI.init(document.getElementById('attendance-module-root'));
+            
+            var hiddenEvent = document.getElementById('globalEventSelect');
+            if(hiddenEvent) hiddenEvent.addEventListener('change', function(e) { window.AttendanceModule.setEvent(e.target.value); });
+
+            var viewTab = document.getElementById('mainViewTab');
+            if(viewTab) {
+                viewTab.addEventListener('change', function(e) {
+                    window.AttendanceModule.switchTab(e.target.value);
+                });
+            }
+
+            var s2 = document.getElementById('searchManual');
+            if(s2) s2.addEventListener('input', function() {
+                window.AttendanceModule.state.search.manual = s2.value.toLowerCase();
+                window.AttendanceModule.renderManual();
+            });
+
+            var cols = ['Expected', 'Present', 'Late', 'Excused', 'Absent']; 
+            cols.forEach(function(col) {
+                var segInput = document.getElementById('seg' + col);
+                if(segInput) {
+                    segInput.addEventListener('change', function(e) {
+                        window.AttendanceModule.setSegment(col, parseInt(e.target.value));
+                    });
+                }
+                
+                var searchInput = document.getElementById('search' + col);
+                if(searchInput) {
+                    searchInput.addEventListener('input', function() {
+                        window.AttendanceModule.filterCol(col, searchInput.value);
+                    });
+                }
+            });
+
+            var attemptRender = function(isBg) {
+                if (window.EZD_STORE.coreReady && window.EZD_STORE.liveReady) {
+                    window.AttendanceModule.syncFromStore(isBg);
+                }
+            };
+
+            if (window.EZD_STORE && window.EZD_STORE.coreReady && window.EZD_STORE.liveReady) attemptRender(false);
+            window.addEventListener('fdsCoreReady', function() { attemptRender(false); });
+            window.addEventListener('fdsLiveReady', function() { attemptRender(true); });
+            
+            window.addEventListener('fdsLiveHeartbeat', function() { 
+                window.AttendanceModule.state.lastSyncTime = Date.now(); 
+            });
+
+            this.state.lastSyncTime = Date.now();
+            setInterval(function() {
+                var diff = Date.now() - window.AttendanceModule.state.lastSyncTime;
+                var ind = document.getElementById('liveIndicator');
+                var root = document.getElementById('attendance-module-root');
+                
+                if (diff > 35000) { 
+                    window.AttendanceModule.state.isOffline = true;
+                    if(ind) { ind.innerText = '● OFFLINE'; ind.style.color = '#ef4444'; }
+                    if(root) { root.style.pointerEvents = 'none'; root.style.filter = 'grayscale(0.6) opacity(0.8)'; }
+                } else {
+                    if (window.AttendanceModule.state.isOffline) {
+                        window.AttendanceModule.state.isOffline = false;
+                        if(ind) { ind.innerText = '● LIVE'; ind.style.color = 'var(--primary-color)'; }
+                        if(root) { root.style.pointerEvents = 'auto'; root.style.filter = 'none'; }
+                    }
+                }
+            }, 5000);
+
+            setInterval(function() {
+                var self = window.AttendanceModule;
+                if (self.state.pendingRedraw && Date.now() >= self.state.pauseUpdatesUntil) {
+                    self.state.pendingRedraw = false;
+                    self.syncFromStore(true);
+                }
+            }, 1000);
+        },
+
+        syncFromStore: function(isBackground) {
+            this.state.lastSyncTime = Date.now();
+            
+            if (isBackground && Date.now() < this.state.pauseUpdatesUntil) {
+                this.state.pendingRedraw = true;
+                return; 
+            }
+
+            var incomingAttString = JSON.stringify(window.EZD_STORE.attendance || []);
+            var isRealChange = (this.state.lastAttString !== incomingAttString);
+            
+            if (isBackground && isRealChange) {
+                this.state.allowAnimation = true; 
+                var bell = document.querySelector('.fa-bell');
+                if (bell) {
+                    bell.style.transform = "scale(1.3)";
+                    bell.style.color = "var(--primary-color)";
+                    setTimeout(function() { bell.style.transform = "scale(1)"; bell.style.color = ""; }, 300);
+                }
+            }
+            this.state.lastAttString = incomingAttString;
+
+            this.data.events = [];
+            if(window.EZD_STORE.events) {
+                for(var i=0; i<window.EZD_STORE.events.length; i++) this.data.events.push(window.EZD_STORE.events[i]);
+            }
+            this.data.events.sort(function(a,b) { return new Date(b.Date) - new Date(a.Date); });
+            
+            this.data.attendance = window.EZD_STORE.attendance || [];
+            
+            this.data.people = [];
+            if(window.EZD_STORE.people) {
+                for(var j=0; j<window.EZD_STORE.people.length; j++) this.data.people.push(window.EZD_STORE.people[j]);
+            }
+
+            if (!this.state.currentEventID && this.data.events.length > 0) {
+                this.state.currentEventID = this.data.events[0].EventID;
+            }
+
+            if (!isBackground) this.updateEventDropdown();
+            this.refreshActiveView();
+            
+            var elTime = document.getElementById('lastUpdate');
+            if(elTime) elTime.innerText = "Last Sync: " + new Date().toLocaleTimeString();
+            var ind = document.getElementById('liveIndicator');
+            if(ind) { 
+                ind.style.opacity = 0.2; 
+                setTimeout(function(){ ind.style.opacity=1; }, 300); 
+            }
+            
+            this.updateBadge();
+            
+            var drawer = document.getElementById('tl-drawer');
+            if (drawer && drawer.classList.contains('open')) {
+                var titleText = document.getElementById('drawer-title').innerText;
+                if (titleText === 'Action Center') {
+                    this.openInbox(); 
+                } else if (titleText.includes('Profile') && this.state.currentDrawerSysId) {
+                    this.openStudentDrawer(this.state.currentDrawerSysId, true); 
+                }
+            }
+        },
+
+        updateEventDropdown: function() {
+            var optionsHTML = "";
+            var expectedText = "";
+
+            for(var i=0; i<this.data.events.length; i++) {
+                var e = this.data.events[i];
+                var pDate = e.Date ? String(e.Date).split('T')[0].split('-') : ['1970','01','01'];
+                var d = new Date(pDate[0], pDate[1]-1, pDate[2]);
+                var dateString = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                
+                var labelText = dateString + ' - ' + e.Title;
+                
+                if (String(e.EventID) === String(this.state.currentEventID)) {
+                    expectedText = labelText;
+                }
+                
+                optionsHTML += '<div class="ezd-select-option" data-val="' + labelText + '">' + labelText + '</div>';
+            }
+            
+            var menu = document.getElementById('menu-globalEventSelect');
+            if (menu) {
+                var container = menu.querySelector('.ezd-select-options');
+                if (container) {
+                    container.innerHTML = optionsHTML;
+                    var opts = container.querySelectorAll('.ezd-select-option');
+                    for(var j=0; j<opts.length; j++) {
+                        opts[j].onclick = function(e) { 
+                            e.stopPropagation(); 
+                            if(window.EZD_UI) window.EZD_UI.setValue('globalEventSelect', this.dataset.val);
+                            menu.style.display = 'none';
+                            window.AttendanceModule.setEvent(this.dataset.val);
+                        };
+                    }
+                }
+            }
+            
+            if(expectedText && window.EZD_UI) {
+                window.EZD_UI.setValue('globalEventSelect', expectedText);
+            }
+        },
+
+        setEvent: function(incomingVal) {
+            var actualEid = incomingVal;
+            for(var i=0; i<this.data.events.length; i++) {
+                var e = this.data.events[i];
+                var pDate = e.Date ? String(e.Date).split('T')[0].split('-') : ['1970','01','01'];
+                var d = new Date(pDate[0], pDate[1]-1, pDate[2]);
+                var dateString = d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                var labelText = dateString + ' - ' + e.Title;
+                
+                if (incomingVal === labelText) {
+                    actualEid = e.EventID;
+                }
+            }
+            this.state.currentEventID = actualEid;
+            this.refreshActiveView();
+        },
+
+        switchTab: function(tabName) {
+            var self = window.AttendanceModule;
+            var oldView = document.querySelector('.att-view.active');
+            var newView = document.getElementById('view-' + tabName);
+            
+            if (oldView === newView) return;
+            self.state.allowAnimation = true;
+
+            if (oldView) {
+                oldView.style.opacity = "0";
+                setTimeout(function() {
+                    oldView.classList.remove('active');
+                    activate();
+                }, 150);
+            } else {
+                activate();
+            }
+
+            function activate() {
+                self.state.currentTab = tabName;
+                if (newView) {
+                    newView.classList.add('active');
+                    void newView.offsetWidth; 
+                    newView.style.opacity = "1";
+                }
+                
+                if(window.EZD_UI && window.EZD_UI.getComponentValue('mainViewTab') !== tabName) {
+                    window.EZD_UI.setValue('mainViewTab', tabName);
+                }
+                self.refreshActiveView();
+            }
+        },
+
+        refreshActiveView: function() {
+            if (!this.state.currentEventID) return;
+            if (this.state.currentTab === 'dashboard') this.renderDashboard();
+            if (this.state.currentTab === 'board') this.renderKanban();
+            if (this.state.currentTab === 'timeline') this.renderTimeline();
+            if (this.state.currentTab === 'manual') this.renderManual();
+        },
+
+        findPerson: function(id) { 
+            for(var i=0; i<this.data.people.length; i++) {
+                var p = this.data.people[i];
+                if (String(p.SystemID || p.StudentID) === String(id)) return p;
+            }
+            return { FirstName: 'Unknown', LastName: id }; 
+        },
+
+        parseNoteTags: function(note) {
+            if (!note) return { in: null, out: null, arrive: null, depart: null, cleanNote: "" };
+            
+            var getVal = function(prefix) {
+                if (!note.includes(prefix)) return null;
+                var start = note.indexOf(prefix) + prefix.length;
+                var end = note.indexOf("]", start);
+                if (end === -1) return null;
+                return note.substring(start, end).trim();
+            };
+            
+            var clean = note;
+            var metaIdx = clean.indexOf("=== SYSTEM METADATA ===");
+            if (metaIdx > -1) clean = clean.substring(0, metaIdx);
+            
+            var prefixes = ["[IN:", "[OUT:", "[ARRIVE:", "[DEPART:"];
+            for(var i=0; i<prefixes.length; i++) {
+                var pfx = prefixes[i];
+                while(clean.includes(pfx)) {
+                    var s = clean.indexOf(pfx);
+                    var e = clean.indexOf("]", s);
+                    if (e > -1) {
+                        clean = clean.substring(0, s) + clean.substring(e + 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            return {
+                in: getVal("[IN:"),
+                out: getVal("[OUT:"),
+                arrive: getVal("[ARRIVE:"),
+                depart: getVal("[DEPART:"),
+                cleanNote: clean.trim()
+            };
+        },
+
+        getProcessedPeople: function() {
+            var eid = this.state.currentEventID;
+            var event = null;
+            for(var eIdx=0; eIdx<this.data.events.length; eIdx++) {
+                if(this.data.events[eIdx].EventID === eid) event = this.data.events[eIdx];
+            }
+            if(!event) return [];
+
+            var safeParse = function(str) { 
+                if (!str) return [];
+                if (Array.isArray(str)) {
+                    var arr = [];
+                    for(var i=0; i<str.length; i++) arr.push(String(str[i]).trim().toLowerCase());
+                    return arr;
+                }
+                try { 
+                    var p = JSON.parse(str); 
+                    if(typeof p === 'string') p = JSON.parse(p);
+                    if(Array.isArray(p)) {
+                        var arr2 = [];
+                        for(var j=0; j<p.length; j++) arr2.push(String(p[j]).trim().toLowerCase());
+                        return arr2;
+                    }
+                } catch(err) {}
+                if (typeof str === 'string') {
+                    var parts = str.split(',');
+                    var arr3 = [];
+                    for(var k=0; k<parts.length; k++) arr3.push(parts[k].trim().toLowerCase());
+                    return arr3;
+                }
+                return []; 
+            };
+
+            var reqGroups = safeParse(event.RequiredGroups);
+            var reqRoles = safeParse(event.RequiredRoles);
+            
+            var results = [];
+            for(var i=0; i<this.data.people.length; i++) {
+                var p = this.data.people[i];
+                var sysID = String(p.SystemID);
+                
+                var rec = null;
+                for(var j=0; j<this.data.attendance.length; j++) {
+                    var a = this.data.attendance[j];
+                    if(a.EventID === eid && String(a.SystemID) === sysID) rec = a;
+                }
+                
+                var isCalled = false;
+                var pGroups = safeParse(p.Groups);
+                var pRole = String(p.Role || "").trim().toLowerCase();
+
+                for(var k=0; k<reqGroups.length; k++) {
+                    if (pGroups.includes(reqGroups[k])) isCalled = true;
+                }
+                if (reqRoles.includes(pRole)) isCalled = true;
+
+                var tags = this.parseNoteTags(rec ? rec.Note : "");
+                
+                var boardBucket = "Expected";
+                var boardSub = 0; 
+
+                if (rec && rec.Status && rec.Status !== "Missing") {
+                    if (rec.Status === "Present") {
+                        boardBucket = "Present";
+                        boardSub = tags.out ? 2 : 0; 
+                    } else if (rec.Status === "Late") {
+                        if (tags.cleanNote && tags.cleanNote.includes('[EXCUSED_LATE:')) {
+                            boardBucket = "Excused";
+                            boardSub = 2;
+                        } else {
+                            boardBucket = "Late"; 
+                            boardSub = 0;
+                        }
+                    } else if (rec.Status === "Checked Out") {
+                        if (tags.cleanNote && tags.cleanNote.includes('[EXCUSED_LEAVE:')) {
+                            boardBucket = "Excused";
+                            boardSub = 2;
+                        } else if (tags.cleanNote && tags.cleanNote.includes('[EARLY_LEAVE:')) {
+                            boardBucket = "Late"; 
+                            boardSub = 2;
+                        } else {
+                            boardBucket = "Present"; 
+                            boardSub = 2; 
+                        }
+                    } else if (rec.Status === "Excused") {
+                        boardBucket = "Excused";
+                        boardSub = 0; 
+                    } else if (rec.Status === "Absent") {
+                        boardBucket = "Absent";
+                        boardSub = 0;
+                    }
+                } else {
+                    boardBucket = "Expected";
+                    boardSub = isCalled ? 0 : 2; 
+                }
+
+                results.push({
+                    person: p, record: rec, tags: tags, isCalled: isCalled,
+                    bucket: boardBucket, sub: boardSub,
+                    searchStr: (p.FirstName + " " + p.LastName + " " + p.Role).toLowerCase()
+                });
+            }
+            return results;
+        },
+
+        renderDashboard: function() {
+            var self = window.AttendanceModule;
+            var eid = self.state.currentEventID;
+            var records = [];
+            
+            for(var i=0; i<self.data.attendance.length; i++) {
+                var a = self.data.attendance[i];
+                if(a.EventID === eid) {
+                    records.push({ r: a, p: self.findPerson(a.SystemID) });
+                }
+            }
+            
+            records.sort(function(a,b) { 
+                var nameA = a.p.FirstName || "";
+                var nameB = b.p.FirstName || "";
+                return nameA.localeCompare(nameB);
+            });
+            
+            var elP = document.getElementById('dPresent');
+            var elL = document.getElementById('dLate');
+            var grid = document.getElementById('dashGrid');
+            
+            var pCount = 0;
+            var lCount = 0;
+            
+            for(var j=0; j<records.length; j++) {
+                if(records[j].r.Status === 'Present') pCount++;
+                if(records[j].r.Status.includes('Late') || (records[j].r.Status === 'Checked Out' && records[j].r.Note && records[j].r.Note.includes('[EARLY_LEAVE:'))) lCount++;
+            }
+            
+            if(elP) elP.innerText = pCount;
+            if(elL) elL.innerText = lCount;
+
+            if(grid) {
+                if(records.length === 0) { 
+                    grid.innerHTML = '<div style="padding:30px; color:var(--text-light); grid-column:1/-1; text-align:center;">Waiting for check-ins...</div>'; 
+                } else {
+                    var html = '';
+                    var shouldAnimate = self.state.allowAnimation; 
+
+                    for(var k=0; k<records.length; k++) {
+                        var item = records[k];
+                        var r = item.r;
+                        var p = item.p;
+                        var timeStr = "--:--";
+                        if (r.CheckInTime > 0) timeStr = new Date(r.CheckInTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                        
+                        var statClass = r.Status.split(' ').join('');
+                        var sysIdStr = String(p.SystemID);
+                        
+                        var animStyle = shouldAnimate ? 'style="animation: cardPop 0.3s ease ' + (k * 0.02) + 's forwards; opacity:0;"' : '';
+                        
+                        html += '<div class="att-card status-' + statClass + '" ' + animStyle + ' onclick="window.AttendanceModule.openStudentDrawer(\'' + sysIdStr + '\')">';
+                        html += '<div class="att-time">' + timeStr + '</div>';
+                        html += '<div class="att-name">' + p.FirstName + ' ' + p.LastName + '</div>';
+                        html += '<div class="att-meta"><i class="fas fa-id-badge"></i> ' + r.SystemID + ' <span style="font-weight:800; margin-left:5px;">' + r.Status.toUpperCase() + '</span></div>';
+                        html += '</div>';
+                    }
+                    grid.innerHTML = html;
+                    self.state.allowAnimation = false; 
+                }
+            }
+        },
+
+        setSegment: function(colName, idx) {
+            this.state.segments[colName] = idx;
+            this.state.limits[colName] = 20;
+            
+            var col = document.getElementById('col-' + colName);
+            if(col) {
+                col.className = 'board-col col-' + colName;
+                if (idx === 1) col.classList.add('col-Merged');
+                else if (idx === 2) {
+                    if (colName === 'Expected') col.classList.add('col-NotCalled');
+                    if (colName === 'Present') col.classList.add('col-CheckedOut');
+                    if (colName === 'Late') col.classList.add('col-Excused');
+                    if (colName === 'Absent') col.classList.add('col-Excused');
+                }
+            }
+            this.renderKanban();
+        },
+
+        filterCol: function(colName, val) {
+            this.state.search[colName] = val.toLowerCase();
+            this.state.limits[colName] = 20;
+            this.renderKanban();
+        },
+
+        loadMore: function(colName) {
+            this.state.limits[colName] += 10;
+            this.renderKanban();
+        },
+
+        renderKanban: function() {
+            var self = window.AttendanceModule;
+            var data = self.getProcessedPeople();
+            var columns = ['Expected', 'Present', 'Late', 'Excused', 'Absent'];
+            var shouldAnimate = self.state.allowAnimation; 
+
+            for(var c=0; c<columns.length; c++) {
+                var colName = columns[c];
+                var seg = self.state.segments[colName];
+                var search = self.state.search[colName];
+                
+                var filtered = [];
+                for(var i=0; i<data.length; i++) {
+                    var d = data[i];
+                    if(d.bucket !== colName) continue;
+                    if(seg === 0 && d.sub !== 0) continue;
+                    if(seg === 2 && d.sub !== 2) continue;
+                    if(search && !d.searchStr.includes(search)) continue;
+                    filtered.push(d);
+                }
+
+                document.querySelector('#col-' + colName + ' .cnt-badge').innerText = filtered.length;
+                
+                var limit = self.state.limits[colName];
+                var sliced = filtered.slice(0, limit);
+                
+                var html = '';
+                for(var j=0; j<sliced.length; j++) {
+                    var ds = sliced[j];
+                    var borderClass = '';
+                    if (colName === 'Expected') borderClass = 'status-Missing';
+                    if (colName === 'Present') borderClass = 'status-Present';
+                    if (colName === 'Absent') borderClass = 'status-Absent';
+                    if (colName === 'Excused') borderClass = 'status-Excused';
+                    if (colName === 'Late') { 
+                        borderClass = ds.sub === 0 ? 'status-Late' : 'status-EarlyLeave';
+                    }
+
+                    var timeBadge = '';
+                    if (ds.tags.in) {
+                        timeBadge = 'In: ' + ds.tags.in;
+                        if (ds.tags.out) timeBadge += ' &bull; Out: ' + ds.tags.out;
+                        timeBadge = '<span style="float:right; font-size:9px; background:rgba(0,0,0,0.05); padding:2px 4px; border-radius:4px;">' + timeBadge + '</span>';
+                    }
+                    
+                    var statusLabel = '';
+                    if (colName === 'Late' && ds.record && ds.record.Status) {
+                        var sColor = '#f59e0b'; 
+                        if (ds.tags.cleanNote && ds.tags.cleanNote.includes('[EXCUSED_LATE:')) sColor = '#854d0e';
+                        if (ds.tags.cleanNote && ds.tags.cleanNote.includes('[EARLY_LEAVE:')) sColor = '#a855f7';
+                        
+                        var visibleStatus = ds.record.Status;
+                        if (visibleStatus === 'Checked Out' && ds.tags.cleanNote && ds.tags.cleanNote.includes('[EARLY_LEAVE:')) visibleStatus = 'Early Leave';
+                        
+                        statusLabel = '<span style="font-size:9px; font-weight:bold; color:' + sColor + '; margin-right:5px;">[' + visibleStatus.toUpperCase() + ']</span>';
+                    }
+                    
+                    var safeNote = ds.tags.cleanNote ? ds.tags.cleanNote.split('"').join('&quot;') : '';
+                    var sysIdStr = String(ds.person.SystemID);
+
+                    var actionBtn = '';
+                    if (colName === 'Present') {
+                        actionBtn = '<button class="card-quick-btn" title="Check Out" onclick="event.stopPropagation(); window.AttendanceModule.setStatus(\'' + sysIdStr + '\', \'' + self.state.currentEventID + '\', \'SmartCheckOut\')"><i class="fas fa-sign-out-alt"></i></button>';
+                    } else if (colName === 'Absent') {
+                        actionBtn = '<button class="card-quick-btn" title="Excuse Absence" onclick="event.stopPropagation(); window.AttendanceModule.setStatus(\'' + sysIdStr + '\', \'' + self.state.currentEventID + '\', \'Excused\')"><i class="fas fa-file-signature"></i></button>';
+                    } else if (colName === 'Late') {
+                        var actionTarget = ds.sub === 0 ? 'Excuse Late' : 'Excuse Leave';
+                        actionBtn = '<button class="card-quick-btn" title="Excuse" onclick="event.stopPropagation(); window.AttendanceModule.setStatus(\'' + sysIdStr + '\', \'' + self.state.currentEventID + '\', \'' + actionTarget + '\')"><i class="fas fa-file-signature"></i></button>';
+                    }
+
+                    var animStyle = shouldAnimate ? 'style="animation: cardPop 0.3s ease ' + (j * 0.015) + 's forwards; opacity:0;"' : '';
+
+                    html += '<div class="mini-card ' + borderClass + '" ' + animStyle + ' title="' + safeNote + '" onclick="window.AttendanceModule.openStudentDrawer(\'' + sysIdStr + '\')">';
+                    html += '<div style="display:flex; justify-content:space-between; align-items:flex-start;">';
+                    html += '<div style="flex:1;">';
+                    html += '<div style="font-weight:700; font-size:12px; color:var(--text-color);">' + statusLabel + ds.person.FirstName + ' ' + ds.person.LastName + ' ' + timeBadge + '</div>';
+                    html += '<div style="font-size:10px; color:var(--text-light); margin-top:2px;">' + ds.person.Role;
+                    if (ds.tags.cleanNote) html += ' <i class="fas fa-comment-dots" style="color:var(--primary-color);"></i>';
+                    html += '</div></div>';
+                    if (actionBtn) html += '<div style="margin-left:5px;">' + actionBtn + '</div>';
+                    html += '</div></div>';
+                }
+                
+                if (filtered.length > limit) {
+                    html += '<button class="ezd-btn secondary" style="width:100%; margin-top:5px; font-size:11px;" onclick="window.AttendanceModule.loadMore(\'' + colName + '\')">Load More (' + (filtered.length - limit) + ' remaining)</button>';
+                }
+                
+                document.getElementById('list-' + colName).innerHTML = html;
+            }
+            self.state.allowAnimation = false; 
+        },
+
+        renderTimeline: function() {
+            var canvas = document.getElementById('tl-canvas');
+            var event = null;
+            for(var i=0; i<this.data.events.length; i++) {
+                if(this.data.events[i].EventID === this.state.currentEventID) event = this.data.events[i];
+            }
+            if(!event || !canvas) return; 
+
+            var pDate = event.Date ? String(event.Date).split('T')[0].split('-') : ['1970','01','01'];
+            var eDate = new Date(pDate[0], pDate[1]-1, pDate[2]).toLocaleDateString('en-US');
+            
+            var parseToMs = function(timeStr) {
+                if(!timeStr) return 0;
+                var t = String(timeStr).trim().toUpperCase();
+                var match = t.match(/(\d+):(\d+)/);
+                if(!match) return 0;
+                var h = parseInt(match[1], 10);
+                var m = parseInt(match[2], 10);
+                if (t.includes('PM') && h < 12) h += 12;
+                if (t.includes('AM') && h === 12) h = 0;
+                return new Date(eDate + " " + h + ":" + m + ":00").getTime();
+            };
+
+            var startMs = parseToMs(formatDisplayTime(event.StartTime));
+            var endMs = parseToMs(formatDisplayTime(event.EndTime));
+            if(endMs < startMs) endMs += (24*60*60*1000); 
+
+            var viewStart = startMs - (3600000);
+            var viewEnd = endMs + (3600000);
+            var viewRange = viewEnd - viewStart;
+            
+            var getPct = function(ms) { return Math.max(0, Math.min(100, ((ms - viewStart) / viewRange) * 100)); };
+
+            var axisTicksHtml = '';
+            var currentTick = new Date(viewStart);
+            currentTick.setMinutes(0,0,0);
+            while(currentTick.getTime() <= viewEnd) {
+                var pct = getPct(currentTick.getTime());
+                var label = currentTick.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+                axisTicksHtml += '<div class="tl-tick" style="left:' + pct + '%;"><span class="tl-time-label">' + label + '</span></div>';
+                currentTick.setHours(currentTick.getHours() + 1);
+            }
+            var fullAxisHtml = '<div class="tl-axis" id="tl-axis">' + axisTicksHtml + '</div>';
+
+            var html = '<div class="tl-event-master" style="left:' + getPct(startMs) + '%; width:' + (getPct(endMs) - getPct(startMs)) + '%;" onclick="window.AttendanceModule.openEventDrawer()">Event Duration</div>';
+
+            var processed = this.getProcessedPeople();
+            var data = [];
+            for(var pIdx=0; pIdx<processed.length; pIdx++) {
+                if(processed[pIdx].tags.in) data.push(processed[pIdx]);
+            }
+
+            var lines = [];
+            var now = Date.now();
+
+            for(var j=0; j<data.length; j++) {
+                var d = data[j];
+                var pIn = parseToMs(d.tags.in);
+                var pOut = d.tags.out ? parseToMs(d.tags.out) : Math.min(now, endMs);
+                
+                var type = 'present';
+                if(d.record.Status === 'Late') type = 'late';
+                if(d.record.Status === 'Checked Out' && d.tags.cleanNote && d.tags.cleanNote.includes('[EARLY_LEAVE:')) type = 'early';
+
+                var mergeThreshold = 5 * 60000; 
+                var merged = false;
+                for(var k=0; k<lines.length; k++) {
+                    var line = lines[k];
+                    if (Math.abs(line.start - pIn) <= mergeThreshold && Math.abs(line.end - pOut) <= mergeThreshold && line.type === type) {
+                        line.people.push(d);
+                        line.start = Math.min(line.start, pIn);
+                        line.end = Math.max(line.end, pOut);
+                        merged = true; break;
+                    }
+                }
+                if(!merged) {
+                    lines.push({ start: pIn, end: Math.max(pIn + 60000, pOut), type: type, people: [d] });
+                }
+            }
+
+            var currentTop = 80;
+            for(var l=0; l<lines.length; l++) {
+                var ln = lines[l];
+                var pLeft = getPct(ln.start);
+                var pWidth = Math.max(0.5, getPct(ln.end) - pLeft);
+                var count = ln.people.length;
+                
+                var pack = [];
+                for(var m=0; m<ln.people.length; m++) {
+                    var pp = ln.people[m];
+                    pack.push({ n: pp.person.FirstName + ' ' + pp.person.LastName, in: pp.tags.in, out: pp.tags.out, s: pp.record.Status, email: pp.person.Email });
+                }
+                
+                var safeJson = encodeURIComponent(JSON.stringify(pack)).split("'").join("%27");
+
+                html += '<div class="tl-student-line tl-color-' + ln.type + '" ';
+                html += 'style="top:' + currentTop + 'px; left:' + pLeft + '%; width:' + pWidth + '%;" ';
+                html += 'onclick="window.AttendanceModule.openTimelineDrawer(\'' + safeJson + '\')" ';
+                html += 'title="' + count + ' Person(s)"></div>';
+                currentTop += 16;
+            }
+
+            canvas.style.minHeight = (currentTop + 50) + "px";
+            canvas.innerHTML = fullAxisHtml + html;
+        },
+
+        openTimelineDrawer: function(safeJson) {
+            var data = JSON.parse(decodeURIComponent(safeJson));
+            var content = document.getElementById('drawer-content');
+            var footer = document.getElementById('drawer-footer');
+            
+            document.getElementById('drawer-title').innerText = "Scan Details";
+            
+            var html = '';
+            this.state.drawerEmails = [];
+
+            var formatTo12H = function(tStr) {
+                if (!tStr || tStr === 'N/A') return 'N/A';
+                var match = String(tStr).trim().match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if (!match) return tStr; 
+                var h = parseInt(match[1], 10);
+                var m = match[2];
+                var ampm = match[3] ? match[3].toUpperCase() : (h >= 12 ? 'PM' : 'AM');
+                h = h % 12 || 12; 
+                return h + ':' + m + ' ' + ampm;
+            };
+            
+            for(var i=0; i<data.length; i++) {
+                var p = data[i];
+                var cleanIn = formatTo12H(p.in);
+                var cleanOut = formatTo12H(p.out);
+
+                html += '<div style="background:rgba(0,0,0,0.02); padding:10px; border-radius:6px; border:1px solid var(--ezd-border); margin-bottom:10px;">';
+                html += '<div style="font-weight:bold; font-size:12px;">' + p.n + '</div>';
+                html += '<div style="font-size:10px; color:var(--text-light); margin-top:4px;">';
+                html += 'Status: ' + p.s + ' <br> In: ' + cleanIn + ' | Out: ' + cleanOut;
+                html += '</div></div>';
+                
+                if (p.email && p.email.includes('@')) this.state.drawerEmails.push(p.email);
+            }
+            
+            content.innerHTML = html;
+            footer.innerHTML = '<button class="ezd-btn" style="width:100%;" onclick="window.AttendanceModule.emailDrawerGroup()"><i class="fas fa-envelope"></i> Email Group</button>';
+            
+            document.getElementById('tl-drawer').classList.add('open');
+        },
+
+        openEventDrawer: function() {
+            var eid = this.state.currentEventID;
+            var event = null;
+            for(var i=0; i<this.data.events.length; i++) {
+                if(this.data.events[i].EventID === eid) event = this.data.events[i];
+            }
+            if(!event) return;
+
+            document.getElementById('drawer-title').innerText = "Event Details";
+
+            var html = '';
+            
+            html += '<div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">';
+            html += '<div style="width:50px; height:50px; border-radius:12px; background:var(--primary-color); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold;"><i class="fas fa-calendar-day"></i></div>';
+            html += '<div><div style="font-weight:bold; font-size:16px;">' + (event.Title || 'Unnamed Event') + '</div><div style="font-size:11px; color:var(--text-light);">' + (event.Type || 'Event') + ' &bull; ' + (event.Status || 'Scheduled') + '</div></div></div>';
+
+            var eDate = event.Date ? new Date(event.Date).toLocaleDateString('en-US', {weekday: 'short', month:'short', day:'numeric'}) : 'TBD';
+            var eTime = formatDisplayTime(event.StartTime || '--') + ' - ' + formatDisplayTime(event.EndTime || '--');
+            var eLoc = event.Location || 'TBD';
+
+            html += '<div style="background:rgba(0,0,0,0.02); padding:15px; border-radius:8px; border:1px solid var(--ezd-border); margin-bottom:20px; font-size:12px;">';
+            html += '<div style="margin-bottom:8px;"><i class="fas fa-clock" style="width:20px; color:var(--text-light);"></i> <b>' + eDate + '</b> (' + eTime + ')</div>';
+            html += '<div><i class="fas fa-map-marker-alt" style="width:20px; color:var(--text-light);"></i> ' + eLoc + '</div>';
+            html += '</div>';
+
+            var safeJoin = function(val) {
+                try {
+                    if (Array.isArray(val)) return val.join(', ');
+                    if (val && val.startsWith('[')) return JSON.parse(val).join(', ');
+                    return val || 'None';
+                } catch(e) { return val || 'None'; }
+            };
+            
+            html += '<div style="font-size:11px; font-weight:bold; text-transform:uppercase; color:var(--text-light); margin-bottom:10px;">The Call</div>';
+            html += '<div style="font-size:12px; margin-bottom:20px; line-height:1.6; color:var(--text-color);">';
+            html += '<div><b style="color:var(--text-light);">Groups:</b> ' + safeJoin(event.RequiredGroups) + '</div>';
+            html += '<div><b style="color:var(--text-light);">Roles:</b> ' + safeJoin(event.RequiredRoles) + '</div>';
+            html += '<div><b style="color:var(--text-light);">Characters:</b> ' + safeJoin(event.RequiredCharacters) + '</div>';
+            html += '</div>';
+
+            html += '<div style="font-size:11px; font-weight:bold; text-transform:uppercase; color:var(--text-light); margin-bottom:10px;">Settings</div>';
+            html += '<div style="font-size:12px; line-height:1.6; color:var(--text-color);">';
+            
+            var isBarcode = (event.AutoBarcode === 'TRUE' || event.AutoBarcode === true || event.AutoBarcode === 'Yes');
+            var isGPS = (event.LocationBarcodeCheck === 'TRUE' || event.LocationBarcodeCheck === true || event.LocationBarcodeCheck === 'Yes');
+            
+            html += '<div><b style="color:var(--text-light);">Barcode Check-in:</b> ' + (isBarcode ? '<span style="color:#10b981; font-weight:bold;">Enabled</span>' : 'Disabled') + '</div>';
+            html += '<div><b style="color:var(--text-light);">GPS Enforced:</b> ' + (isGPS ? '<span style="color:#10b981; font-weight:bold;">Yes</span>' : 'No') + '</div>';
+            html += '<div><b style="color:var(--text-light);">Grace Period:</b> ' + (event.GracePeriod || 0) + ' min</div>';
+            html += '</div>';
+
+            if (event.Notes) {
+                html += '<div style="font-size:11px; font-weight:bold; text-transform:uppercase; color:var(--text-light); margin-top:20px; margin-bottom:10px;">Public Notes</div>';
+                html += '<div style="background:rgba(255,215,0,0.1); padding:10px; border-radius:8px; border:1px solid rgba(255,215,0,0.3); font-size:12px;">' + event.Notes + '</div>';
+            }
+
+            document.getElementById('drawer-content').innerHTML = html;
+
+            var footer = document.getElementById('drawer-footer');
+            var safeId = String(eid).split("'").join("\\'");
+            
+            footer.innerHTML = '<button class="ezd-btn" style="width:100%;" onclick="document.getElementById(\'tl-drawer\').classList.remove(\'open\'); window.EventsModule.editEvent(\'' + safeId + '\');"><i class="fas fa-edit"></i> Edit Event</button>';
+
+            document.getElementById('tl-drawer').classList.add('open');
+        },
+
+        openStudentDrawer: function(sysId, isRefresh) {
+            var person = this.findPerson(sysId);
+            if (!person || person.FirstName === 'Unknown') return;
+            var eid = this.state.currentEventID;
+            
+            this.state.currentDrawerSysId = sysId; 
+            
+            document.getElementById('drawer-title').innerText = (person.Role || 'Student') + " Profile";
+
+            var present = 0, late = 0, absent = 0, excused = 0;
+            var historyHtml = [];
+
+            var bannerHtml = '';
+            var rec = this.data.attendance.find(a => a.EventID === eid && String(a.SystemID) === String(sysId));
+            var currentEvent = this.data.events.find(e => e.EventID === eid);
+            
+            var eTitle = currentEvent ? currentEvent.Title : 'Current Event';
+            var eDate = currentEvent && currentEvent.Date ? new Date(currentEvent.Date.split('T')[0]).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+            var eventStr = eDate ? (eDate + ' - ' + eTitle) : eTitle; 
+            
+            if (rec && (rec.Status === 'Late' || rec.Status === 'Checked Out') && (!rec.Note || !rec.Note.includes('[UNEXCUSED]'))) {
+                var isLate = rec.Status === 'Late' && !rec.Note.includes('[EXCUSED_LATE:');
+                var isEarly = rec.Status === 'Checked Out' && rec.Note.includes('[EARLY_LEAVE:') && !rec.Note.includes('[EXCUSED_LEAVE:');
+                
+                if (isLate || isEarly) {
+                    var color = isLate ? '#f59e0b' : '#a855f7';
+                    var targetStatus = isLate ? 'Excuse Late' : 'Excuse Leave';
+                    var tags = this.parseNoteTags(rec.Note); 
+                    var timeVal = isLate ? (tags.in || '??:??') : (tags.out || '??:??');
+
+                    bannerHtml += '<div style="background:' + color + '10; border:1px solid ' + color + '30; border-radius:12px; padding:15px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">';
+                    bannerHtml += '<div style="background:' + color + '; color:white; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fas fa-bolt"></i></div>';
+                    bannerHtml += '<div style="flex:1;"><div style="font-size:10px; font-weight:800; color:' + color + ';">ACTION REQUIRED</div>';
+                    
+                    bannerHtml += '<div style="font-size:12px; font-weight:600;">' + (isLate ? 'Late Arrival' : 'Unexcused Leave') + ' at ' + timeVal + ' <span style="opacity:0.6; font-weight:normal;">(' + eventStr + ')</span></div></div>';
+                    
+                    bannerHtml += '<div style="display:flex; gap:6px;">';
+                    bannerHtml += '<button class="ezd-btn" style="background:' + color + '; border:none; padding:5px 10px; font-size:10px;" onclick="window.AttendanceModule.setStatus(\'' + sysId + '\', \'' + eid + '\', \'' + targetStatus + '\'); document.getElementById(\'tl-drawer\').classList.remove(\'open\');">Excuse</button>';
+                    
+                    bannerHtml += '<button class="ezd-btn secondary" style="padding:5px 10px; font-size:10px;" onclick="window.AttendanceModule.silenceException(\'' + sysId + '\', \'' + eid + '\'); document.getElementById(\'tl-drawer\').classList.remove(\'open\');">Deny</button>';
+                    bannerHtml += '</div></div>';
+                }
+            }
+
+            for(var i=0; i<this.data.attendance.length; i++) {
+                var a = this.data.attendance[i];
+                if(String(a.SystemID) === String(sysId)) {
+                    if (a.Status === 'Present') present++;
+                    if (a.Status === 'Late' || (a.Status === 'Checked Out' && a.Note && a.Note.includes('[EARLY_LEAVE:'))) late++;
+                    if (a.Status === 'Absent') absent++;
+                    if (a.Status === 'Excused') excused++;
+                    
+                    var logEntry = '';
+                    var dParts = a.Note ? this.parseNoteTags(a.Note) : null;
+                    
+                    if (dParts) {
+                        var timeStr = "";
+                        if (dParts.in) timeStr += '<span style="color:#10b981; font-weight:bold;">IN: ' + dParts.in + '</span> ';
+                        if (dParts.out) timeStr += '| <span style="color:#ef4444; font-weight:bold;">OUT: ' + dParts.out + '</span> ';
+                        
+                        if (timeStr) logEntry += '<div style="font-size:10px; margin-bottom:2px;">' + timeStr + '</div>';
+                        if (dParts.cleanNote) logEntry += '<div style="font-size:11px; color:var(--text-color);">' + dParts.cleanNote + '</div>';
+                    }
+                    
+                    if (!logEntry && a.Status) {
+                        logEntry = '<div style="font-size:11px; font-weight:bold; color:var(--text-color);">' + a.Status + '</div>';
+                    }
+
+                    if (logEntry) {
+                        var eTitleLoop = 'Event', eDateLoop = '';
+                        for(var j=0; j<this.data.events.length; j++) {
+                            if(this.data.events[j].EventID === a.EventID) {
+                                eTitleLoop = this.data.events[j].Title;
+                                eDateLoop = new Date(this.data.events[j].Date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                            }
+                        }
+                        
+                        historyHtml.push(
+                            '<div style="padding:10px; border-bottom:1px solid var(--ezd-border);">' +
+                                '<div style="font-size:10px; color:var(--text-light); text-transform:uppercase; font-weight:700; margin-bottom:4px;">' + eDateLoop + ' - ' + eTitleLoop + '</div>' +
+                                logEntry +
+                            '</div>'
+                        );
+                    }
+                }
+            }
+
+            var html = bannerHtml; 
+            
+            html += '<div style="display:flex; align-items:center; gap:15px; margin-bottom:20px;">';
+            html += '<div style="width:50px; height:50px; border-radius:50%; background:var(--primary-color); color:white; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:bold;">' + person.FirstName.charAt(0) + '</div>';
+            html += '<div><div style="font-weight:bold; font-size:16px;">' + person.FirstName + ' ' + person.LastName + '</div><div style="font-size:11px; color:var(--text-light);">' + (person.Role || 'Student') + '</div></div></div>';
+
+            html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">';
+            html += '<div style="background:#dcfce7; color:#166534; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:20px; font-weight:900;">' + present + '</div><div style="font-size:9px; text-transform:uppercase; font-weight:bold;">Present</div></div>';
+            html += '<div style="background:#fef3c7; color:#b45309; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:20px; font-weight:900;">' + late + '</div><div style="font-size:9px; text-transform:uppercase; font-weight:bold;">Late / Issues</div></div>';
+            html += '<div style="background:#fee2e2; color:#991b1b; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:20px; font-weight:900;">' + absent + '</div><div style="font-size:9px; text-transform:uppercase; font-weight:bold;">Absent</div></div>';
+            html += '<div style="background:#dbeafe; color:#1e40af; padding:10px; border-radius:8px; text-align:center;"><div style="font-size:20px; font-weight:900;">' + excused + '</div><div style="font-size:9px; text-transform:uppercase; font-weight:bold;">Excused</div></div>';
+            html += '</div>';
+
+            if (historyHtml.length > 0) {
+                html += '<div style="font-size:11px; font-weight:bold; text-transform:uppercase; color:var(--text-light); margin-bottom:10px;">Attendance History</div>';
+                html += '<div style="background:var(--bg-color); border:1px solid var(--ezd-border); border-radius:8px; overflow:hidden;">' + historyHtml.join('') + '</div>';
+            } else {
+                html += '<div style="padding:20px; text-align:center; color:var(--text-light); font-size:12px; font-style:italic;">No history available.</div>';
+            }
+
+            document.getElementById('drawer-content').innerHTML = html;
+
+            var footer = document.getElementById('drawer-footer');
+            this.state.drawerEmails = (person.Email && person.Email.includes('@')) ? [person.Email] : [];
+            var disableEmail = this.state.drawerEmails.length === 0 ? 'opacity:0.5; pointer-events:none;' : '';
+            
+            var safeId = String(sysId).split("'").join("\\'");
+            var footerHtml = '<button class="ezd-btn secondary" style="width:100%; ' + disableEmail + '" onclick="window.AttendanceModule.emailDrawerGroup()"><i class="fas fa-envelope"></i> Email Contact</button>';
+            footerHtml += '<button class="ezd-btn" style="width:100%;" onclick="document.getElementById(\'tl-drawer\').classList.remove(\'open\'); window.PeopleModule.editPerson(\'' + safeId + '\');"><i class="fas fa-user-edit"></i> Edit Full Profile</button>';
+            
+            footer.innerHTML = footerHtml;
+
+            document.getElementById('tl-drawer').classList.add('open');
+        },
+
+        calculateDelta: function(actualTimeStr, expectedTimeStr) {
+            if (!actualTimeStr || !expectedTimeStr || expectedTimeStr === '--:--') return "";
+            var parse = function(t) {
+                var m = t.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if(!m) return 0;
+                var h = parseInt(m[1]), min = parseInt(m[2]), ampm = m[3];
+                if(ampm && ampm.toUpperCase() === 'PM' && h < 12) h += 12;
+                if(ampm && ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+                return (h * 60) + min;
+            };
+            var actual = parse(actualTimeStr);
+            var expected = parse(expectedTimeStr);
+            var diff = Math.abs(actual - expected);
+            
+            var hrs = Math.floor(diff / 60);
+            var mins = diff % 60;
+            if (hrs > 0) return hrs + "h " + mins + "m";
+            return mins + "m";
+        },
+
+        copyColumn: function(colName) {
+            var data = this.getProcessedPeople();
+            var seg = this.state.segments[colName];
+            var search = this.state.search[colName];
+            
+            var filtered = data.filter(d => {
+                if(d.bucket !== colName) return false;
+                if(seg === 0 && d.sub !== 0) return false;
+                if(seg === 2 && d.sub !== 2) return false;
+                if(search && !d.searchStr.includes(search)) return false;
+                return true;
+            });
+
+            if(filtered.length === 0) { window.EZD_UI.notify('info', 'Empty List', 'Nothing to copy.'); return; }
+
+            var text = colName.toUpperCase() + " (" + filtered.length + "):\n";
+            filtered.forEach(d => {
+                text += "• " + d.person.FirstName + " " + d.person.LastName + " (" + d.person.Role + ")\n";
+            });
+
+            navigator.clipboard.writeText(text).then(function() {
+                window.EZD_UI.notify('success', 'Copied!', 'Clean list copied to clipboard.');
+            }).catch(function(err) {
+                window.EZD_UI.notify('error', 'Copy Failed', 'Your browser blocked the copy action.');
+            });
+        },
+
+        emailDrawerGroup: function() {
+            if(this.state.drawerEmails.length === 0) { window.EZD_UI.notify('error', 'No Emails', 'None of these users have valid emails.'); return; }
+            var str = this.state.drawerEmails.join(',');
+            window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(str), '_blank');
+        },
+
+        renderManual: function() {
+            var self = window.AttendanceModule;
+            var container = document.getElementById('manualList');
+            var searchVal = self.state.search.manual || "";
+            var eid = self.state.currentEventID;
+            
+            var processed = self.getProcessedPeople();
+            var rows = [];
+            for(var i=0; i<processed.length; i++) {
+                if(processed[i].searchStr.includes(searchVal)) rows.push(processed[i]);
+            }
+
+            var currentHash = JSON.stringify(rows.map(function(r) {
+                return { id: r.person.SystemID, in: r.tags.in, out: r.tags.out, arrive: r.tags.arrive, depart: r.tags.depart, note: r.tags.cleanNote, status: r.record ? r.record.Status : null };
+            }));
+
+            if (self.state.lastManualHash === currentHash) return;
+            self.state.lastManualHash = currentHash;
+
+            var html = '';
+            for(var j=0; j<rows.length; j++) {
+                var r = rows[j];
+                var sysId = r.person.SystemID;
+                var safeNote = r.tags.cleanNote ? r.tags.cleanNote.split('"').join('&quot;') : '';
+                var timeIn = r.tags.in || '';
+                var timeOut = r.tags.out || '';
+                var expArr = r.tags.arrive || '';
+                var expDep = r.tags.depart || '';
+                
+                var sClass = 'Missing';
+                if (r.record && r.record.Status) sClass = r.record.Status.split(' ').join('');
+                
+                html += '<div class="manual-row status-' + sClass + '" style="align-items: center; padding: 12px 15px;">';
+                
+                html += '<div style="flex: 0 0 180px; display: flex; flex-direction: column; gap: 2px;">';
+                html += '<div style="font-weight:700; color:var(--text-color); font-size: 14px;">' + r.person.FirstName + ' ' + r.person.LastName + '</div>';
+                html += '<div style="font-size:11px; color:var(--text-light);">' + r.person.Role + '</div>';
+                html += '</div>';
+                
+                html += '<div style="flex: 1; padding: 0 20px; display: flex; flex-direction: column; gap: 8px;">';
+
+                html += '<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">';
+                
+                var inSourceIcon = r.tags.in_src === 'manual' ? 'user-edit' : 'barcode';
+                var outSourceIcon = r.tags.out_src === 'manual' ? 'user-edit' : 'barcode';
+
+                html += '<div class="tint-green" style="position:relative;">';
+                html += '<i class="fas fa-' + inSourceIcon + '" style="position:absolute; right:10px; top:28px; font-size:10px; opacity:0.5; color:#10b981;" title="Source: ' + (r.tags.in_src || 'system') + '"></i>';
+                html += '<div data-ezd-type="drum-time" id="arr_' + sysId + '" data-label="Time In" data-value="' + timeIn + '"></div></div>';
+
+                html += '<div class="tint-purple" style="position:relative;">';
+                html += '<i class="fas fa-' + outSourceIcon + '" style="position:absolute; right:10px; top:28px; font-size:10px; opacity:0.5; color:#a855f7;" title="Source: ' + (r.tags.out_src || 'system') + '"></i>';
+                html += '<div data-ezd-type="drum-time" id="dep_' + sysId + '" data-label="Time Out" data-value="' + timeOut + '"></div></div>';
+
+                html += '<div class="tint-blue"><div data-ezd-type="drum-time" id="lmt_arr_' + sysId + '" data-label="Excused Till" data-value="' + expArr + '"></div></div>';
+                html += '<div class="tint-blue"><div data-ezd-type="drum-time" id="lmt_dep_' + sysId + '" data-label="Leave After" data-value="' + expDep + '"></div></div>';
+                
+                html += '</div>'; 
+
+                html += '<div onmousedown="window.AttendanceModule.pausePoller()"><div data-ezd-type="input" data-type="text" id="note_' + sysId + '" data-placeholder="General Note..." data-icon="fa-comment-dots" style="margin-bottom:0;" data-value="' + safeNote + '"></div></div>';
+                
+                html += '</div>';
+
+                html += '<div class="manual-toggles">';
+                html += self.btn(r, eid, 'Present', 'check');
+                html += self.btn(r, eid, 'Late', 'clock');
+                html += self.btn(r, eid, 'SmartCheckOut', 'sign-out-alt', 'Check Out'); 
+                html += self.btn(r, eid, 'Absent', 'times');
+                html += self.btn(r, eid, 'Excused', 'file-signature');
+                html += '</div></div>';
+            }
+            container.innerHTML = html;
+
+            if(window.EZD_UI) window.EZD_UI.init(container);
+
+            rows.forEach(function(r) {
+                var sysId = r.person.SystemID;
+                setTimeout(function() {
+                    var noteEl = document.getElementById('note_' + sysId);
+                    if(noteEl) noteEl.addEventListener('change', function() { window.AttendanceModule.saveNote(sysId, eid, this.value); });
+                    
+                    var arrEl = document.getElementById('arr_' + sysId);
+                    if(arrEl) arrEl.addEventListener('change', function() { window.AttendanceModule.scheduleException(sysId, eid, 'IN', this.value); });
+                    var depEl = document.getElementById('dep_' + sysId);
+                    if(depEl) depEl.addEventListener('change', function() { window.AttendanceModule.scheduleException(sysId, eid, 'OUT', this.value); });
+                    
+                    var lmtArrEl = document.getElementById('lmt_arr_' + sysId);
+                    if(lmtArrEl) lmtArrEl.addEventListener('change', function() { window.AttendanceModule.scheduleException(sysId, eid, 'ARRIVE', this.value); });
+                    var lmtDepEl = document.getElementById('lmt_dep_' + sysId);
+                    if(lmtDepEl) lmtDepEl.addEventListener('change', function() { window.AttendanceModule.scheduleException(sysId, eid, 'DEPART', this.value); });
+                }, 100);
+            });
+        },
+
+        openInlineTime: function(sysId, type, btnEl) {
+            this.state.pauseUpdatesUntil = Date.now() + 30000; 
+            
+            var panel = document.getElementById('timePanel_' + sysId);
+            var label = document.getElementById('timeLabel_' + sysId);
+            var input = document.getElementById('timeInput_' + sysId);
+            var hidden = document.getElementById('timeType_' + sysId);
+            
+            if(!panel) return;
+            
+            if (panel.style.display === 'block' && hidden.value === type) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            label.innerText = type === 'IN' ? 'Set Time In' : 'Set Time Out';
+            hidden.value = type;
+            
+            var raw = btnEl.getAttribute('data-raw');
+            var t24 = "";
+            if (raw) {
+                var match = raw.match(/(\d+):(\d+)/);
+                if(match) {
+                    var h = parseInt(match[1], 10);
+                    var m = match[2];
+                    if(raw.includes('PM') && h < 12) h += 12;
+                    if(raw.includes('AM') && h === 12) h = 0;
+                    t24 = String(h).padStart(2, '0') + ":" + m;
+                }
+            }
+            input.value = t24;
+            
+            panel.style.display = 'block';
+            input.focus();
+        },
+
+        commitInlineTime: function(sysId, eid) {
+            var type = document.getElementById('timeType_' + sysId).value;
+            var val24 = document.getElementById('timeInput_' + sysId).value;
+            
+            if (!val24) return; 
+            
+            var parts = val24.split(':');
+            var h = parseInt(parts[0], 10);
+            var ampm = h >= 12 ? 'PM' : 'AM';
+            var h12 = h % 12 || 12;
+            var displayVal = String(h12).padStart(2, '0') + ':' + parts[1] + ' ' + ampm;
+            
+            document.getElementById('timePanel_' + sysId).style.display = 'none';
+            this.scheduleException(sysId, eid, type, displayVal);
+        },
+
+        clearInlineTime: function(sysId, eid) {
+            var type = document.getElementById('timeType_' + sysId).value;
+            document.getElementById('timePanel_' + sysId).style.display = 'none';
+            this.scheduleException(sysId, eid, type, ''); 
+        },
+
+        btn: function(r, eid, statusName, icon, customTitle) {
+            var isActive = '';
+            var title = customTitle || statusName;
+            
+            if (r.record && r.record.Status === statusName) {
+                isActive = 'active-' + statusName.split(' ').join('');
+            }
+            
+            if (statusName === 'SmartCheckOut' && r.record && r.record.Status === 'Checked Out') {
+                if (r.tags.cleanNote && r.tags.cleanNote.includes('[EARLY_LEAVE:')) isActive = 'active-EarlyLeave';
+                else isActive = 'active-CheckedOut';
+            }
+            
+            return '<button class="toggle-btn ' + isActive + '" title="' + title + '" onclick="window.AttendanceModule.setStatus(\'' + r.person.SystemID + '\', \'' + eid + '\', \'' + statusName + '\')"><i class="fas fa-' + icon + '"></i></button>';
+        },
+
+        swapTimes: function(sysId, eid) {
+            this.state.pauseUpdatesUntil = Date.now() + 5000;
+            
+            var rec = null;
+            for(var i=0; i<this.data.attendance.length; i++) {
+                if(this.data.attendance[i].EventID === eid && String(this.data.attendance[i].SystemID) === String(sysId)) {
+                    rec = this.data.attendance[i];
+                }
+            }
+            if (!rec || !rec.Note) return;
+
+            var tags = this.parseNoteTags(rec.Note);
+            if (!tags.in || !tags.out) return;
+
+            var oldIn = tags.in;
+            var oldOut = tags.out;
+            var note = rec.Note;
+
+            var tagsToRemove = ['IN', 'OUT', 'IN_SRC', 'OUT_SRC'];
+            tagsToRemove.forEach(function(t) {
+                var regex = new RegExp("\\[" + t + ":[^\\]]+\\]", "g");
+                note = note.replace(regex, "");
+            });
+            
+            note = "[IN_SRC: MANUAL] [IN: " + oldOut + "] [OUT_SRC: MANUAL] [OUT: " + oldIn + "] " + note.replace(/\s{2,}/g, ' ').trim();
+            rec.Note = note;
+            
+            this.flashWrap();
+            this._instantUIRefresh(); 
+            
+            google.script.run.withSuccessHandler(function() { 
+                if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true); 
+            }).withFailureHandler(function(err) { console.error("Update Failed:", err); }).updateManualAttendance({ EventID: eid, SystemID: sysId, Note: note });
+        },
+
+        scheduleException: function(sysId, eid, type, timeVal) {
+            this.state.pauseUpdatesUntil = Date.now() + 5000;
+            
+            var rec = null;
+            for(var i=0; i<this.data.attendance.length; i++) {
+                if(this.data.attendance[i].EventID === eid && String(this.data.attendance[i].SystemID) === String(sysId)) {
+                    rec = this.data.attendance[i];
+                }
+            }
+            
+            var note = rec ? (rec.Note || "") : "";
+            
+            var tagsToRemove = [type];
+            if (type === 'IN') tagsToRemove.push('IN_SRC');
+            if (type === 'OUT') tagsToRemove.push('OUT_SRC');
+
+            tagsToRemove.forEach(function(t) {
+                var regex = new RegExp("\\[" + t + ":[^\\]]+\\]", "g");
+                note = note.replace(regex, "");
+            });
+            
+            note = note.replace(/\s{2,}/g, ' ').trim();
+
+            if (timeVal) {
+                note = "[" + type + ": " + timeVal + "] " + note;
+                if (type === 'IN' || type === 'OUT') {
+                    note = "[" + type + "_SRC: MANUAL] " + note;
+                }
+            }
+            
+            if(rec) rec.Note = note; 
+            else this.data.attendance.push({ EventID: eid, SystemID: sysId, Status: '', Note: note }); 
+            
+            this.flashWrap();
+            this._instantUIRefresh(); 
+            
+            google.script.run.withSuccessHandler(function() { 
+                if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true); 
+            }).withFailureHandler(function(err) { console.error("Update Failed:", err); }).updateManualAttendance({ EventID: eid, SystemID: sysId, Note: note });
+        },
+
+        silenceException: function(sysId, eid) {
+            var rec = this.data.attendance.find(a => a.EventID === eid && String(a.SystemID) === String(sysId));
+            var note = rec ? (rec.Note || "") : "";
+            
+            if (!note.includes("[UNEXCUSED]")) {
+                note = "[UNEXCUSED] " + note;
+                if(rec) rec.Note = note;
+                else this.data.attendance.push({ EventID: eid, SystemID: sysId, Status: '', Note: note });
+                
+                this._instantUIRefresh(); 
+
+                google.script.run.withSuccessHandler(function() {
+                    if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true);
+                }).withFailureHandler(function(err) { console.error("Update Failed:", err); }).updateManualAttendance({ EventID: eid, SystemID: sysId, Note: note });
+            }
+        },
+
+        saveNote: function(sysId, eid, text) {
+            this.state.pauseUpdatesUntil = Date.now() + 5000;
+            var rec = null;
+            for(var i=0; i<this.data.attendance.length; i++) {
+                if(this.data.attendance[i].EventID === eid && String(this.data.attendance[i].SystemID) === String(sysId)) {
+                    rec = this.data.attendance[i];
+                }
+            }
+            var fullNote = rec ? (rec.Note || "") : "";
+            
+            var tagStr = "";
+            var temp = fullNote;
+            while(temp.includes("[")) {
+                var s = temp.indexOf("[");
+                var e = temp.indexOf("]", s);
+                if(e > -1) {
+                    tagStr += temp.substring(s, e+1) + " ";
+                    temp = temp.substring(0, s) + temp.substring(e+1);
+                } else break;
+            }
+
+            fullNote = tagStr + text.trim();
+
+            if(rec) rec.Note = fullNote; 
+            else this.data.attendance.push({ EventID: eid, SystemID: sysId, Status: '', Note: fullNote }); 
+            
+            this.flashWrap();
+            this._instantUIRefresh(); 
+
+            google.script.run.withSuccessHandler(function() { 
+                if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true); 
+            }).withFailureHandler(function(err) { console.error("Update Failed:", err); }).updateManualAttendance({ EventID: eid, SystemID: sysId, Note: fullNote });
+        },
+
+        setStatus: function(sysId, eid, newStatus) {
+            this.state.pauseUpdatesUntil = Date.now() + 5000;
+            
+            var rec = null;
+            for(var i=0; i<this.data.attendance.length; i++) {
+                if(this.data.attendance[i].EventID === eid && String(this.data.attendance[i].SystemID) === String(sysId)) {
+                    rec = this.data.attendance[i];
+                }
+            }
+            
+            var currentNote = rec ? (rec.Note || "") : "";
+            var finalStatus = newStatus;
+
+            if (newStatus === 'SmartCheckOut') {
+                var event = this.data.events.find(e => e.EventID === eid);
+                var expectedEnd = null;
+                if (event && event.Date && event.EndTime) {
+                    var dObj = new Date(event.Date.split('T')[0]);
+                    var tMatch = event.EndTime.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                    if (tMatch) {
+                        var h = parseInt(tMatch[1]);
+                        if (tMatch[3] && tMatch[3].toUpperCase() === 'PM' && h < 12) h += 12;
+                        if (tMatch[3] && tMatch[3].toUpperCase() === 'AM' && h === 12) h = 0;
+                        dObj.setHours(h, parseInt(tMatch[2]), 0);
+                        expectedEnd = dObj;
+                    }
+                }
+                var departMatch = currentNote.match(/\[DEPART:\s*([^\]]+)\]/);
+                if (departMatch) {
+                    var dpMatch = departMatch[1].match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                    if (dpMatch && expectedEnd) {
+                        var dh = parseInt(dpMatch[1]);
+                        if (dpMatch[3] && dpMatch[3].toUpperCase() === 'PM' && dh < 12) dh += 12;
+                        if (dpMatch[3] && dpMatch[3].toUpperCase() === 'AM' && dh === 12) dh = 0;
+                        expectedEnd.setHours(dh, parseInt(dpMatch[2]), 0);
+                    }
+                }
+                var now = new Date();
+                var graceTime = expectedEnd ? new Date(expectedEnd.getTime() - (10 * 60000)) : now;
+                
+                finalStatus = 'Checked Out';
+                if (now < graceTime && !currentNote.includes("[EARLY_LEAVE:")) {
+                    currentNote = "[EARLY_LEAVE: TRUE] " + currentNote;
+                }
+            }
+
+            if (newStatus === 'Excuse Late') {
+                finalStatus = 'Late';
+                if (!currentNote.includes("[EXCUSED_LATE:")) currentNote = "[EXCUSED_LATE: TRUE] " + currentNote;
+            }
+            if (newStatus === 'Excuse Leave') {
+                finalStatus = 'Checked Out';
+                if (!currentNote.includes("[EXCUSED_LEAVE:")) currentNote = "[EXCUSED_LEAVE: TRUE] " + currentNote;
+            }
+
+            if (finalStatus === 'Excused' || finalStatus === 'Absent') {
+                if (!currentNote.includes("[PRIOR_ABSENCE:")) currentNote = "[PRIOR_ABSENCE: TRUE] " + currentNote;
+            } else {
+                if (currentNote.includes("[PRIOR_ABSENCE:")) {
+                    var s = currentNote.indexOf("[PRIOR_ABSENCE:");
+                    var e = currentNote.indexOf("]", s);
+                    if (e > -1) currentNote = currentNote.substring(0, s) + currentNote.substring(e + 1);
+                    currentNote = currentNote.trim();
+                }
+            }
+            
+            if (finalStatus === 'Checked Out' && !currentNote.includes("[OUT:")) {
+                var nowOut = new Date();
+                var timeStr = nowOut.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true});
+                currentNote = "[OUT_SRC: MANUAL] [OUT: " + timeStr + "] " + currentNote;
+            }
+
+            var personCtx = this.getProcessedPeople().find(function(p) { return String(p.person.SystemID) === String(sysId); });
+            var isCalled = personCtx ? personCtx.isCalled : false;
+
+            var isExplicitToggleOff = (rec && newStatus === rec.Status);
+
+            if (isExplicitToggleOff && finalStatus !== 'Missing' && finalStatus !== '') {
+                finalStatus = isCalled ? 'Missing' : '';
+                currentNote = currentNote.replace(/\[IN:[^\]]+\]/g, '').replace(/\[OUT:[^\]]+\]/g, '').replace(/\[EARLY_LEAVE:[^\]]+\]/g, '').replace(/\[EXCUSED_LATE:[^\]]+\]/g, '').replace(/\[EXCUSED_LEAVE:[^\]]+\]/g, '').replace(/\[IN_SRC:[^\]]+\]/g, '').replace(/\[OUT_SRC:[^\]]+\]/g, '').trim();
+            }
+
+            if(rec) {
+                rec.Status = finalStatus;
+                rec.Note = currentNote;
+            } else {
+                this.data.attendance.push({ EventID: eid, SystemID: sysId, Status: finalStatus, Note: currentNote });
+            }
+
+            var noteInput = document.getElementById('note_' + sysId);
+            if (noteInput) {
+                var row = noteInput.closest('.manual-row');
+                if (row) {
+                    var btns = row.querySelectorAll('.toggle-btn');
+                    var targetTitle = finalStatus;
+                    if (finalStatus === 'Checked Out') targetTitle = 'Check Out';
+                    if (finalStatus === 'Missing' || finalStatus === '') targetTitle = 'NONE';
+                    
+                    btns.forEach(function(b) {
+                        b.className = 'toggle-btn'; 
+                        if (b.title === targetTitle) {
+                            var paintClass = finalStatus.split(' ').join('');
+                            if (finalStatus === 'Checked Out' && currentNote.includes('[EARLY_LEAVE:')) paintClass = 'EarlyLeave';
+                            b.classList.add('active-' + paintClass); 
+                        }
+                    });
+                    
+                    row.className = row.className.replace(/status-\w+/g, '').trim(); 
+                    if (finalStatus !== '') row.classList.add('status-' + finalStatus.split(' ').join('')); 
+                }
+            }
+
+            this.flashWrap();
+            this._instantUIRefresh(); 
+
+            google.script.run.withSuccessHandler(function() {
+                if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true);
+            }).withFailureHandler(function(err) { console.error("Update Failed:", err); }).updateManualAttendance({ EventID: eid, SystemID: sysId, Status: finalStatus, Note: currentNote });
+        },
+
+        processAbsences: function() {
+            window.EZD_UI.confirm({ type: 'warning', title: 'Process Absences?', message: 'This will lock all currently "Missing" personnel as Absent.', confirmText: 'Process' })
+            .then(function(res) {
+                if(res) {
+                    window.EZD_UI.notify('info', 'Processing...', 'Locking matrix...');
+                    google.script.run.withSuccessHandler(function(r) {
+                        window.EZD_UI.notify('success', 'Complete', 'Locked ' + r.count + ' absentees.');
+                        if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true);
+                    }).processAbsencesNow(window.AttendanceModule.state.currentEventID);
+                }
+            });
+        },
+
+        flashWrap: function() {
+            if(window.EZD_UI && window.EZD_UI._utils && window.EZD_UI._utils.flashInput) {
+                var wrap = document.querySelector('.att-header-wrap');
+                if(wrap) window.EZD_UI._utils.flashInput(wrap, 'typing');
+            }
+        },
+
+        emailColumn: function(colName) {
+            var emails = [];
+            var cards = document.querySelectorAll('#col-' + colName + ' .mini-card');
+            for(var i=0; i<cards.length; i++) {
+                var nameText = cards[i].querySelector('div').innerText;
+                if(nameText.includes('[')) nameText = nameText.split(']')[1].trim(); 
+                var cleanName = nameText.includes('In:') ? nameText.split('In:')[0].trim() : nameText.trim();
+                
+                var person = null;
+                for(var j=0; j<this.data.people.length; j++) {
+                    if (this.data.people[j].FirstName + ' ' + this.data.people[j].LastName === cleanName) person = this.data.people[j];
+                }
+
+                if(person && person.Email && person.Email.includes('@')) emails.push(person.Email);
+            }
+            if(emails.length === 0) { window.EZD_UI.notify('error', 'No Emails', 'No valid emails in this view.'); return; }
+            window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(emails.join(',')), '_blank');
+        },
+
+        openGlobalEmailModal: function() {
+            var modal = document.getElementById('emailModal');
+            if(window.EZD_UI) window.EZD_UI.init(modal);
+            modal.classList.add('visible');
+        },
+
+        executeGlobalEmail: function() {
+            var rawVal = document.getElementById('emailStatuses').value || "[]";
+            var statuses = JSON.parse(rawVal);
+            if(statuses.length === 0) { window.EZD_UI.notify('error', 'Select Status', 'Please select at least one status.'); return; }
+            
+            var data = this.getProcessedPeople();
+            var emails = [];
+            for(var i=0; i<data.length; i++) {
+                var d = data[i];
+                var s = d.record ? d.record.Status : (d.isCalled ? "Missing" : "");
+                if (statuses.includes(s) && d.person.Email && d.person.Email.includes('@')) {
+                    emails.push(d.person.Email);
+                }
+            }
+
+            document.getElementById('emailModal').classList.remove('visible');
+            if(emails.length === 0) { window.EZD_UI.notify('error', 'No Matches', 'No users found matching those statuses.'); return; }
+            window.open('https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(emails.join(',')), '_blank');
+        },
+        
+        printReport: function() {
+            var eid = this.state.currentEventID;
+            var event = this.data.events.find(e => e.EventID === eid);
+            if (!event) return window.EZD_UI.notify('error', 'Error', 'No event selected.');
+
+            var data = this.getProcessedPeople();
+            var buckets = { 'Expected': [], 'Present': [], 'Late': [], 'Excused': [], 'Absent': [] };
+            
+            data.forEach(d => {
+                if (buckets[d.bucket]) buckets[d.bucket].push(d);
+            });
+
+            var eDate = event.Date ? new Date(event.Date.split('T')[0]).toLocaleDateString('en-US', {weekday: 'short', month:'short', day:'numeric'}) : 'TBD';
+            var eTime = formatDisplayTime(event.StartTime || '--') + ' - ' + formatDisplayTime(event.EndTime || '--');
+
+            var printWindow = window.open('', '_blank');
+            var html = '<html><head><title>Rehearsal Report</title>';
+            html += '<style>';
+            html += 'body { font-family: sans-serif; padding: 20px; color: #333; line-height: 1.4; }';
+            html += 'h1 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 5px; }';
+            html += '.meta { color: #666; font-size: 14px; margin-bottom: 30px; }';
+            html += '.bucket { margin-bottom: 20px; }';
+            html += '.bucket-title { font-size: 16px; font-weight: bold; background: #f0f0f0; padding: 5px 10px; margin-bottom: 10px; border-radius: 4px; }';
+            html += '.person { margin-left: 15px; font-size: 14px; margin-bottom: 4px; }';
+            html += '.note { font-size: 12px; color: #666; font-style: italic; margin-left: 10px; }';
+            html += '@media print { body { padding: 0; } }';
+            html += '</style></head><body>';
+            
+            html += '<h1>' + (event.Title || 'Event Report') + '</h1>';
+            html += '<div class="meta">' + eDate + ' | ' + eTime + ' | Location: ' + (event.Location || 'TBD') + '</div>';
+
+            var bNames = ['Expected', 'Present', 'Late', 'Excused', 'Absent'];
+            var bLabels = ['Missing / Not Called', 'Present & Active', 'Issues (Late / Early Leave)', 'Excused', 'Unexcused Absent'];
+
+            bNames.forEach((b, idx) => {
+                var list = buckets[b];
+                if (list.length > 0) {
+                    html += '<div class="bucket">';
+                    html += '<div class="bucket-title">' + bLabels[idx] + ' (' + list.length + ')</div>';
+                    list.forEach(d => {
+                        var noteStr = d.tags.cleanNote ? ' <span class="note">- ' + d.tags.cleanNote + '</span>' : '';
+                        var timeStr = d.tags.in ? ' <span class="note">[In: ' + d.tags.in + ']</span>' : '';
+                        var statusMark = (b === 'Late' && d.record && d.record.Status === 'Checked Out') ? ' <b>[Early Leave]</b>' : '';
+                        html += '<div class="person">• ' + d.person.FirstName + ' ' + d.person.LastName + ' (' + d.person.Role + ')' + statusMark + timeStr + noteStr + '</div>';
+                    });
+                    html += '</div>';
+                }
+            });
+
+            html += '</body></html>';
+            printWindow.document.write(html);
+            printWindow.document.close();
+            
+            setTimeout(function() { printWindow.print(); }, 500);
+        },
+
+        openBulkEditModal: function() {
+            var modal = document.getElementById('bulkEditModal');
+            if(window.EZD_UI) {
+                window.EZD_UI.init(modal);
+                window.EZD_UI.resetForm(modal);
+            }
+            modal.classList.add('visible');
+        },
+
+        submitBulkEdit: function() {
+            var self = this;
+            var groups = JSON.parse(window.EZD_UI.getComponentValue('bulkGroups') || "[]");
+            var roles = JSON.parse(window.EZD_UI.getComponentValue('bulkRoles') || "[]");
+            var characters = JSON.parse(window.EZD_UI.getComponentValue('bulkCharacters') || "[]");
+            var peopleIds = JSON.parse(window.EZD_UI.getComponentValue('bulkPeople') || "[]");
+            
+            var rawStatus = window.EZD_UI.getComponentValue('bulkStatus') || "";
+            var targetStatus = "";
+            if (rawStatus === "Missing (Clear Data)") targetStatus = "Missing";
+            else if (rawStatus !== "-- Keep Current Status --" && rawStatus !== "") targetStatus = rawStatus;
+
+            var targetArrive = document.getElementById('bulkArrive').value || "";
+            var targetDepart = document.getElementById('bulkDepart').value || "";
+            
+            if (groups.length === 0 && roles.length === 0 && characters.length === 0 && peopleIds.length === 0) {
+                return window.EZD_UI.notify('error', 'No Targets', 'Please select at least one group, role, character, or individual.');
+            }
+
+            var eid = this.state.currentEventID;
+            var matches = [];
+
+            this.data.people.forEach(p => {
+                var isMatch = false;
+                if (peopleIds.includes(String(p.SystemID))) isMatch = true; 
+                if (roles.includes(p.Role)) isMatch = true;
+                
+                try { var pGroups = JSON.parse(p.Groups || "[]"); if (pGroups.some(g => groups.includes(g))) isMatch = true; } catch(e) {}
+                try { var pChars = JSON.parse(p.Characters || "[]"); if (pChars.some(c => characters.includes(c))) isMatch = true; } catch(e) {}
+
+                if (isMatch) matches.push(p);
+            });
+
+            if (matches.length === 0) return window.EZD_UI.notify('error', 'No Matches', 'No personnel fit those criteria.');
+
+            window.EZD_UI.setButtonState('runBulkEditBtn', 'saving');
+            
+            matches.forEach((p, idx) => {
+                setTimeout(function() {
+                    var sysId = String(p.SystemID);
+                    var rec = self.data.attendance.find(a => a.EventID === eid && String(a.SystemID) === sysId);
+                    
+                    var currentStatus = rec ? rec.Status : 'Missing';
+                    var currentNote = rec ? (rec.Note || "") : "";
+                    
+                    var newStatus = targetStatus !== "" ? targetStatus : currentStatus;
+                    
+                    if (targetArrive !== "") {
+                        currentNote = currentNote.replace(/\[ARRIVE:[^\]]+\]/g, '').trim();
+                        if (targetArrive.toUpperCase() !== "CLEAR") currentNote = "[ARRIVE: " + targetArrive + "] " + currentNote;
+                    }
+                    if (targetDepart !== "") {
+                        currentNote = currentNote.replace(/\[DEPART:[^\]]+\]/g, '').trim();
+                        if (targetDepart.toUpperCase() !== "CLEAR") currentNote = "[DEPART: " + targetDepart + "] " + currentNote;
+                    }
+                    
+                    if (newStatus === 'Missing' || newStatus === '') {
+                        currentNote = currentNote.replace(/\[IN:[^\]]+\]/g, '').replace(/\[OUT:[^\]]+\]/g, '').replace(/\[EARLY_LEAVE:[^\]]+\]/g, '').replace(/\[EXCUSED_LATE:[^\]]+\]/g, '').replace(/\[EXCUSED_LEAVE:[^\]]+\]/g, '').replace(/\[IN_SRC:[^\]]+\]/g, '').replace(/\[OUT_SRC:[^\]]+\]/g, '').trim();
+                    }
+
+                    if(rec) { rec.Status = newStatus; rec.Note = currentNote.replace(/\s{2,}/g, ' '); } 
+                    else { self.data.attendance.push({ EventID: eid, SystemID: sysId, Status: newStatus, Note: currentNote.replace(/\s{2,}/g, ' ') }); }
+
+                    google.script.run.withSuccessHandler(function() {
+                        if (idx === matches.length - 1) {
+                            self._instantUIRefresh(); 
+                            document.getElementById('bulkEditModal').classList.remove('visible');
+                            window.EZD_UI.notify('success', 'Bulk Edit Complete', 'Updated ' + matches.length + ' records.');
+                            window.EZD_UI.setButtonState('runBulkEditBtn', 'idle');
+                            if (window.EZD_SYNC && typeof window.EZD_SYNC.pullLive === 'function') window.EZD_SYNC.pullLive(true);
+                        }
+                    }).updateManualAttendance({ EventID: eid, SystemID: sysId, Status: newStatus, Note: currentNote.replace(/\s{2,}/g, ' ') });
+
+                }, idx * 150); 
+            });
+        }
+    };
+
+    setTimeout(function() { window.AttendanceModule.init(); }, 100);
+})();
+</script>
